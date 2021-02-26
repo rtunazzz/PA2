@@ -18,7 +18,7 @@ Využívat jej je nepovinné, ale doporučované.
 
 Jistě sis všiml, že soubor `README.md` má v systému Gitlab své speciální místo. Zobrazuje se při procházení adresáři a měl by obsahovat nějaké stručné informace.
 
-Dále sis asi všiml souborů `.gitkeep`. Nástroj `git` bohužel umí verzovat jen soubory, nikoli adresáře, takže aby si mohl verzovat prázdný adresář, musíš do něj něco vložit. A běžně se můžeš setkat s podobnými soubory jako `.gitkeep`, které slouží přesně k tomuto účelu. Samozřejmě je můžeš smazat, jen si pak budeš muset složku případně vytvořit ručně.
+Dále sis asi všiml souborů `.gitkeep`. Nástroj `git` bohužel umí verzovat jen soubory, nikoli adresáře, takže abys mohl verzovat prázdný adresář, musíš do něj něco vložit. A běžně se můžeš setkat s podobnými soubory jako `.gitkeep`, které slouží přesně k tomuto účelu. Samozřejmě je můžeš smazat, jen si pak budeš muset složku případně vytvořit ručně.
 
 Můžeš tu najít také soubor `.gitignore`, ten je velice důležitý. Definuje, jaké soubory se nemají verzovat. My jsme ho pro tebe už vyplnili doporučeným nastavením pro jazyk C/C++. Takže například soubory, které končí na `.so` nebo `.o` nebo `.out` se verzovat nebudou. Ale samozřejmě si ho můžeš upravit podle sebe. (Například přidat si podpůrné soubory pro vaše IDE.)
 
