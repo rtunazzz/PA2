@@ -7,7 +7,7 @@ toto je tvůj oficiální repozitář k předmětu PA2. Repozitář ti byl vygen
 Repozitář již obsahuje 3 adresáře:
 
 ```
-homeworks/ ..... domácí úlohy
+homework/ ..... domácí úlohy
 practice/ ...... procvičovací úlohy
 semestral/ ..... semestrální úloha
 ```
