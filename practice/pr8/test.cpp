@@ -83,6 +83,7 @@ class CLink : public CEntity {
     CLink(const string& path) : m_Path(path) {
         m_Name = "";
     }
+
     // Size
     int Size() const {
         return m_Path.size() + 1;
@@ -265,6 +266,7 @@ class CDirectory : public CEntity {
     }
 
     CDirectory& operator=(CDirectory tmp) {  // Copy & Swap z konzultace
+        std::swap(tmp.m_Name, m_Name);
         std::swap(tmp.m_Buffer, m_Buffer);
         return *this;
     }
