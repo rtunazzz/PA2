@@ -46,7 +46,7 @@ class CFile : public CEntity {
      * @param hash Hash of the file's data
      * @param filesize Size of the file
      */
-    CFile(const string& hash, int filesize) : m_Hash(hash), m_Filesize(filesize) {
+    CFile(const string hash, int filesize) : m_Hash(hash), m_Filesize(filesize) {
         m_Name = "";
     }
 
@@ -64,7 +64,7 @@ class CFile : public CEntity {
      * @param filesize Size of the file
      * @return CFile& Reference to self
      */
-    CFile& Change(const string& hash, int filesize) {
+    CFile& Change(const string hash, int filesize) {
         m_Hash = hash;
         m_Filesize = filesize;
         return *this;
@@ -80,7 +80,7 @@ class CLink : public CEntity {
     string m_Path;
 
     // Constructor
-    CLink(const string& path) : m_Path(path) {
+    CLink(const string path) : m_Path(path) {
         m_Name = "";
     }
 
@@ -90,7 +90,7 @@ class CLink : public CEntity {
     }
 
     // Change
-    CLink& Change(const string& path) {
+    CLink& Change(const string path) {
         m_Path = path;
         return *this;
     }
@@ -226,16 +226,28 @@ class CDirectory : public CEntity {
      * @brief Deletes a file from the directory specified by the filename.
      * @param filename Name of the file to delete.
      */
-    CDirectory& Change(string& filename) {
-        // Check if file exists via the find_if func and a lambda function that matches files with the name
-        auto it = find_if(m_Buffer->files.begin(), m_Buffer->files.end(), [&filename](const CFile& file) { return file.m_Name == filename; });
-        if (it == m_Buffer->files.end()) {
-            // file was not found = we dont need to delete it
+    CDirectory& Change(string filename) {
+        auto fileIt = find_if(m_Buffer->files.begin(), m_Buffer->files.end(), [&filename](const CEntity& file) { return file.m_Name == filename; });
+        if (fileIt != m_Buffer->files.end()) {
+            // delete the file form the vector
+            m_Buffer->files.erase(fileIt);
             return *this;
-        } else {
-            // otherwise delete the file form the vector
-            m_Buffer->files.erase(it);
         }
+
+        auto linkIt = find_if(m_Buffer->links.begin(), m_Buffer->links.end(), [&filename](const CEntity& link) { return link.m_Name == filename; });
+        if (linkIt != m_Buffer->links.end()) {
+            // delete the link form the vector
+            m_Buffer->links.erase(linkIt);
+            return *this;
+        }
+
+        auto dirIt = find_if(m_Buffer->directories.begin(), m_Buffer->directories.end(), [&filename](const CEntity& dir) { return dir.m_Name == filename; });
+        if (dirIt != m_Buffer->directories.end()) {
+            // delete the directory form the vector
+            m_Buffer->directories.erase(dirIt);
+            return *this;
+        }
+
         return *this;
     }
 
@@ -383,8 +395,28 @@ int main() {
 
     CFile& innerFile = dynamic_cast<CFile&>(root.Get("file.txt"));
     cout << innerFile.m_Hash << " size: " << innerFile.Size() << endl;
-    innerFile.Change("New hash mf", 10000);
+    innerFile.Change("New hash!!", 10000);
     cout << innerFile.m_Hash << " size: " << innerFile.Size() << endl;
+
+    CLink& innerLink = dynamic_cast<CLink&>(root.Get("file.ln"));
+    cout << innerLink.m_Name << " -> " << innerLink.m_Path << " size:" << innerLink.Size() << endl;
+    innerLink.Change("/path/to/something");
+    string p = "/path/to/something/new";
+    innerLink.Change(p).Change(p);
+    cout << innerLink.m_Name << " -> " << innerLink.m_Path << " size:" << innerLink.Size() << endl;
+
+    // ================== COPY TEST ==================
+    cout << "================== BEFORE COPY ==================" << endl;
+    cout << root << endl;
+
+    CDirectory root2 = root;
+    root2.Change("TestFile.txt", CFile("yesyes=", 123));
+
+    cout << "================== ROOT1: ==================" << endl;
+    cout << root << endl;
+
+    cout << "================== ROOT2: ==================" << endl;
+    cout << root2 << endl;
     return 0;
 }
 
