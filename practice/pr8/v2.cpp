@@ -168,8 +168,7 @@ class CDirectory : public CEntity {
         } else {
             auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
             if (it != data.end()) {
-                // delete the file form the map
-                delete (it->second);
+                // delete the file from the map
                 data.erase(it);
                 return *this;
             }
@@ -192,7 +191,7 @@ class CDirectory : public CEntity {
 
         if (f) {
             // It's a file
-            CFile* newFile = new CFile(*f);
+            CFile* newFile = new CFile(*f);  // TODO handle deleting
             newFile->m_Name = filename;
             if (it == data.end()) {
                 // Insert the new file
@@ -207,7 +206,7 @@ class CDirectory : public CEntity {
 
         if (l) {
             // It's a link
-            CLink* newLink = new CLink(*l);
+            CLink* newLink = new CLink(*l);  // TODO handle deleting
             newLink->m_Name = filename;
 
             if (it == data.end()) {
@@ -223,7 +222,7 @@ class CDirectory : public CEntity {
 
         if (d) {
             // It's a directory
-            CDirectory* newDir = new CDirectory(*d);
+            CDirectory* newDir = new CDirectory(*d);  // TODO handle deleting
             newDir->m_Name = filename;
 
             if (it == data.end()) {
@@ -380,18 +379,29 @@ int main() {
     cout << innerLink.m_Name << " -> " << innerLink.m_Path << " size:" << innerLink.Size() << endl;
 
     // ================== COPY TEST ==================
-    cout << "================== BEFORE COPY ==================" << endl;
+    cout << "================== [DIRECTORY] BEFORE COPY ==================" << endl;
     cout << root << endl;
 
     CDirectory root2 = root;
     root2.Change("TestFile.txt", CFile("yesyes=", 123));
     root2.Change("TestFile.ln", CLink("test/path"));
+    root.Change("file.txt");
 
-    cout << "================== ROOT1: ==================" << endl;
+    cout << "================== [DIRECTORY] ROOT1: ==================" << endl;
     cout << root << endl;
 
-    cout << "================== ROOT2: ==================" << endl;
+    cout << "================== [DIRECTORY] ROOT2: ==================" << endl;
     cout << root2 << endl;
+
+    CFile file1 = CFile("copytest", 111);
+    cout << "================== [FILE] BEFORE COPY ==================" << endl;
+    cout << file1 << endl;
+    CFile file2 = file1;
+    cout << "================== [FILE] COPY1 ==================" << endl;
+    cout << file1 << endl;
+    cout << "================== [FILE] COPY2 ==================" << endl;
+    cout << file2 << endl;
+
     return 0;
 }
 
