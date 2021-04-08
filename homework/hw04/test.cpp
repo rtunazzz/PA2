@@ -304,7 +304,11 @@ class CCarList {
      * @brief Returns the license plate number of the current car.
      * @return const char* License plate number
      */
-    const char* RZ(void) const { return m_registry[m_index].rz; };
+    const char* RZ(void) const {
+        if (!AtEnd())
+            return m_registry[m_index].rz;
+        return nullptr;
+    };
 
     /**
      * @brief Checks whether or not we are in the end of the list.
@@ -371,12 +375,20 @@ class COwnerList {
      * @brief Returns the name of the owner we're currently on.
      * @return const char* Name
      */
-    const char* Name(void) const { return m_registry[m_index].name; }
+    const char* Name(void) const {
+        if (!AtEnd())
+            return m_registry[m_index].name;
+        return nullptr;
+    }
     /**
      * @brief Returns the surname of the owner we're currently on.
      * @return const char* Surname
      */
-    const char* Surname(void) const { return m_registry[m_index].surname; }
+    const char* Surname(void) const {
+        if (!AtEnd())
+            return m_registry[m_index].surname;
+        return nullptr;
+    }
     /**
      * @brief Checks whether or not we are in the end of the list.
      * @return true When we are in the end of the list
@@ -499,11 +511,24 @@ class CRegister {
      */
     int CountOwners(const char* RZ) const {
         int count = 0;
-
         // Iterate over our container and increase count if the RZ.
         for (int i = 0; i < m_data.size(); i++) {
-            if (strcmp(RZ, m_data[i].rz) == 0) {
-                // TODO Add a check whether or not we already counted the owner
+            if (strcmp(RZ, m_data[i].rz) != 0)
+                continue;
+
+            bool duplicate = false;
+            // iterate over the previously checked names
+            for (int j = 0; j < i; j++) {
+                if (strcmp(RZ, m_data[j].rz) != 0)
+                    continue;
+
+                // if any match, it's a duplicate name
+                if (strcmp(m_data[i].name, m_data[j].name) == 0 && strcmp(m_data[i].surname, m_data[j].surname) == 0) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (!duplicate) {
                 count++;
             }
         }
@@ -568,10 +593,6 @@ class CRegister {
     COwnerList ListOwners(const char* RZ) const {
         // m_data.print();
         return COwnerList(m_data, RZ);
-    }
-
-    void print() {
-        m_data.print();
     }
 };
 
