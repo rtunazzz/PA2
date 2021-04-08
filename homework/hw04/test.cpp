@@ -302,7 +302,7 @@ class CRegister {
         cout << "============================================================" << endl;
         cout << "Before adding:" << endl;
         m_data.print();
-        cout << "=============== Adding rz: '" << rz << "' ===============" << endl;
+        cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
 
         m_data.push_back(Car(rz, name, surname));
 
@@ -341,13 +341,77 @@ class CRegister {
         }
         return false;
     }
-    bool Transfer(const char* rz,
-                  const char* nName,
-                  const char* nSurname);
+
+    /**
+     * @brief Counts how many cars an a person has.
+     * Person is idenfitifed by the name & surname parameters
+     * @param name
+     * @param surname 
+     * @return int 
+     */
+    int CountCars(const char* name, const char* surname) const {
+        int count = 0;
+
+        // Iterate over our container and increase count if the name and surname match.
+        for (int i = 0; i < m_data.size(); i++) {
+            if (strcmp(name, m_data[i].name) == 0 && strcmp(surname, m_data[i].surname) == 0) {
+                count++;
+            }
+        }
+
+        // cout << "============================================================" << endl;
+        // cout << name << " " << surname << " has " << count << " cars." << endl;
+        // cout << "============================================================" << endl;
+
+        return count;
+    }
+
+    /**
+     * @brief Transfers a car to the person identified by the nName and nSurname parameters.
+     * @param rz License plate of the car to transfer
+     * @param nName First name of the new owner
+     * @param nSurname Last name of the new owner
+     * @return true When transfer was successfully completed
+     * @return false When car doesn't exist or the current owner & the new owner are the same.
+     */
+    bool Transfer(const char* rz, const char* nName, const char* nSurname) {
+        // find the car we are trying to transfer
+        for (int i = 0; i < m_data.size(); i++) {
+            if (strcmp(rz, m_data[i].rz) == 0) {
+                // we found a car with a matching rz
+                // check if the owners are different
+                if (strcmp(nSurname, m_data[i].surname) == 0 && strcmp(nName, m_data[i].name) == 0) {
+                    // owners are the same
+                    return false;
+                }
+                // TODO Optimize this memory allocation & deallocation
+                cout << "============================================================" << endl;
+                cout << "Before transfer:" << endl;
+                cout << m_data[i] << endl;
+
+                cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
+
+                // update the owner's name
+                delete m_data[i].name;
+                m_data[i].name = new char[strlen(nName) + 1];
+                strcpy(m_data[i].name, nName);
+                // update the owner's surname
+                delete m_data[i].surname;
+                m_data[i].surname = new char[strlen(nSurname) + 1];
+                strcpy(m_data[i].surname, nSurname);
+
+                cout << "After transfer:" << endl;
+                cout << m_data[i] << endl;
+                cout << "============================================================" << endl;
+
+                return true;
+            }
+        }
+        // not found
+        return false;
+    }
     CCarList ListCars(const char* name,
                       const char* surname) const;
-    int CountCars(const char* name,
-                  const char* surname) const;
     COwnerList ListOwners(const char* RZ) const;
     int CountOwners(const char* RZ) const;
 };
@@ -375,11 +439,8 @@ int main(void) {
     strncpy(name, "Peter", sizeof(name));
     strncpy(surname, "Smith", sizeof(surname));
     assert(b0.AddCar("XYZ-11-22", name, surname) == true);
-
-    b0.DelCar("ABC-32-22");
-    return 0;
-
     assert(b0.CountCars("John", "Hacker") == 1);
+    return 0;
     assert(matchList(b0.ListCars("John", "Hacker"), "ABC-32-22"));
     assert(b0.CountOwners("ABC-12-34") == 1);
     COwnerList ol0 = b0.ListOwners("ABC-12-34");
