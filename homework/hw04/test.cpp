@@ -8,6 +8,166 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
+/**
+ * @brief Simple template implementation of the std::vector container.
+ * @tparam T Type of the values we plan on storing in our container
+ */
+template <typename T>
+class MyVector {
+   private:
+    /** @brief Buffer (array) which holds our data */
+    T* m_buffer;
+
+    /** @brief Maximum capacity of our buffer (data) */
+    unsigned int m_max_capacity;
+
+    /** @brief Size of our buffer (data) */
+    unsigned int m_size;
+
+    /**
+     * @brief Swaps the vector values passed in with our current vector.
+     * Expected to be used with the copy-and-swap idiom
+     * @param old 
+     */
+    void swap(MyVector<T>& old) {
+        m_buffer = old.m_buffer;
+        m_max_capacity = old.m_max_capacity;
+        m_size = old.m_size;
+        old.m_buffer = nullptr;
+    }
+
+    /** @brief Increases (2x) the capacity of our container. */
+    void increase_capacity() {
+        // Initialize the new capactity
+        unsigned int new_max_capacity = 2 * (this->m_max_capacity);
+        if (new_max_capacity == 0) new_max_capacity = 1;  // TODO Increase for better performance
+
+        // Initialize a new buffer and allocate memory
+        T* new_buffer = new T[new_max_capacity];
+
+        // Copy the contents in the current buffer to the new one
+        for (int i = 0; i < this->m_size; ++i) {
+            new_buffer[i] = (this->m_buffer)[i];
+        }
+
+        // Delete the old buffer & assign to member variables
+        delete[](this->m_buffer);
+        this->m_buffer = new_buffer;
+        this->m_max_capacity = new_max_capacity;
+    }
+
+   public:
+    // ====================================== CONSTRUCTOR / DESTRUCTOR / CCONSTRUCTOR ======================================
+    /**
+    * @brief Construct a new My Vector object
+    * with maximum capacity set to 0 and size 0
+    */
+    MyVector() : m_max_capacity(0), m_size(0), m_buffer(nullptr) {}
+
+    /**
+     * @brief Copies a My Vector object
+     * @param old source to be copied form
+     */
+    MyVector(const MyVector<T>& old) : m_max_capacity(old.m_size), m_size(old.m_size), m_buffer(new T[old.m_size]) {
+        // copy contents of the old buffer to the new one
+        for (int i = 0; i < old.m_size; ++i) {
+            m_buffer[i] = old.m_buffer[i];
+        }
+    }
+
+    /**
+     * @brief Destroys the My Vector object and frees alocated memory.
+     */
+    ~MyVector() {
+        if (m_buffer != nullptr)
+            delete[] m_buffer;
+    }
+
+    // ====================================== OPERATOR OVERLOADING ======================================
+    /**
+     * @brief Overloads the = operator.
+     * Uses the copy-and-swap idiom
+     * @param old 
+     * @return MyVector<T>&
+     */
+    MyVector<T>& operator=(MyVector<T> old) {
+        swap(old);
+        return *this;
+    }
+
+    /**
+     * @brief Overloads the [] operator
+     * Returns the T& located at the index passed in.
+     * @param index 
+     * @return T& 
+     */
+    T& operator[](unsigned int index) {
+        return m_buffer[index];
+    };
+
+    // ====================================== METHODS ======================================
+    /**
+     * @brief Adds a value to our container.
+     * @param var Variable to be added
+     */
+    void push_back(const T& var) {
+        // if we're at max capacity, increase it
+        if (m_size >= m_max_capacity) {
+            increase_capacity();
+        }
+        // and add the variable to the buffer
+        m_buffer[m_size] = var;
+        m_size++;
+    }
+
+    /**
+     * @brief Removes and returns the last element from the container.
+     * !!! This method is different than the default implementation of the std::vector::pop_back method.
+     */
+    T pop_back() {
+        T& to_return = m_buffer[--m_size];
+        return to_return;
+    }
+
+    /**
+     * @brief Returns the size of our container.
+     * @return unsigned int 
+     */
+    unsigned int size() { return m_size; };
+
+    /**
+     * @brief Returns the last element from our container.
+     * @return T& 
+     */
+    T& back() { return m_buffer[m_size - 1]; };
+
+    /**
+     * @brief Inserts an element onto the position passed in.
+     * @param position index of where the element should be placed
+     * @param var value which is to be placed at the possition passed in
+     */
+    void insert(const unsigned int position, const T& var) {
+        // increase capacity if needed
+        if (m_size >= m_max_capacity) {
+            increase_capacity();
+        }
+        // move elements starting from the position passed in one index further,
+        // which leaves the position index empty
+        for (int i = (int)m_size; i > position; --i) {
+            m_buffer[i] = m_buffer[i - 1];
+        }
+        m_buffer[position] = var;
+        m_size++;
+    }
+
+    /** @brief Utility method to print the vector on the standard output. */
+    void print() {
+        for (int i = 0; i < m_size; ++i) {
+            std::cout << m_buffer[i] << std::endl;
+        }
+    }
+};
+
 class CCarList {
    public:
     // copy cons, op=, dtor ...
