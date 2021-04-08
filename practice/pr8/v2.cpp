@@ -24,8 +24,10 @@ using namespace std;
 
 class CEntity {
    public:
-    /** @brief Name of the file */
+    /** @brief Name of the entity */
     string m_Name;
+    // not needed since we hold names in the folder map anyway but this way
+    // I can overload the << operators on the class' children
 
     virtual ~CEntity() {}
     virtual int Size() const { return -1; }
@@ -72,6 +74,12 @@ class CFile : public CEntity {
         return *this;
     }
 
+    /**
+     * @brief Sends file's string representation to the stream specified
+     * @param os stream to send the string to
+     * @param file file to be sent
+     * @return ostream& 
+     */
     friend ostream& operator<<(ostream& os, const CFile& file) {
         os << file.Size() << "\t" << file.m_Name << " " << file.m_Hash;
         return os;
@@ -83,25 +91,41 @@ class CFile : public CEntity {
  */
 class CLink : public CEntity {
    public:
-    /** @brief Path to the link */
+    /** @brief Path of the link */
     string m_Path;
 
-    // Constructor
+    /**
+     * @brief Construct a new CLink object
+     * @param path Path of the link
+     */
     CLink(const string path) : m_Path(path) {
         m_Name = "";
     }
 
-    // Size
+    /**
+     * @brief Returns the size of the link
+     * @return int 
+     */
     int Size() const {
         return m_Path.size() + 1;
     }
 
-    // Change
+    /**
+     * @brief Changes the link's file to the new path passed in
+     * @param path new path
+     * @return CLink& 
+     */
     CLink& Change(const string path) {
         m_Path = path;
         return *this;
     }
 
+    /**
+     * @brief Sends link's string representation to the stream specified
+     * @param os stream to send the string to
+     * @param link link to be sent
+     * @return ostream& 
+     */
     friend ostream& operator<<(ostream& os, const CLink& link) {
         os << link.Size() << "\t" << link.m_Name << " -> " << link.m_Path;
         return os;
@@ -113,6 +137,7 @@ class CLink : public CEntity {
  */
 class CDirectory : public CEntity {
    public:
+    /** @brief Holds data about our entities */
     map<string, CEntity*> data;
 
     /**
@@ -134,6 +159,8 @@ class CDirectory : public CEntity {
     /**
      * @brief Deletes a file from the directory specified by the filename.
      * @param filename Name of the file to delete.
+     * @param ent Pointer to the entity to be changed (= deleted)
+     * @return CDirectory& 
      */
     CDirectory& Change(string filename, CEntity* ent = nullptr) {
         if (ent) {
@@ -154,7 +181,7 @@ class CDirectory : public CEntity {
     /**
      * @brief Adds or replaces in our directory file specified by the filename
      * @param filename Name of the file to add/ replace
-     * @param file The actual file to add/ replace
+     * @param entity const reference to the entity to add/ replace
      */
     CDirectory& Change(string filename, const CEntity& entity) {
         const CFile* f = dynamic_cast<const CFile*>(&entity);
@@ -214,8 +241,9 @@ class CDirectory : public CEntity {
     }
 
     /**
-     * @brief Finds an entity by name.
+     * @brief Finds an entity by name. Throws out_of_range if not found.
      * Returns it by reference to prevent "cutting" while converting to CEntity
+     * @throws std::out_of_range
      * @param filename Name of the file
      * @return CEntity& 
      */
@@ -245,7 +273,12 @@ class CDirectory : public CEntity {
         throw std::out_of_range("Resource not found.");
     }
 
-    // operator<<
+    /**
+     * @brief Sends directory's string representation to the stream specified
+     * @param os stream to send the string to
+     * @param dir directory to be sent
+     * @return ostream& 
+     */
     friend ostream& operator<<(ostream& os, const CDirectory& dir) {
         for (auto const& it : dir.data) {
             const CFile* f = dynamic_cast<const CFile*>(it.second);
