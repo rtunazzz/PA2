@@ -50,6 +50,12 @@ class CFile : public CEntity {
         m_Name = "";
     }
 
+    CFile(const CFile& file) {
+        m_Name = file.m_Name;
+        m_Hash = file.m_Hash;
+        m_Filesize = file.m_Filesize;
+    }
+
     /**
      * @brief Returns the current size of the file.
      * @return int Size of the file
@@ -84,6 +90,11 @@ class CLink : public CEntity {
         m_Name = "";
     }
 
+    CLink(const CLink& link) {
+        m_Name = link.m_Name;
+        m_Path = link.m_Path;
+    }
+
     // Size
     int Size() const {
         return m_Path.size() + 1;
@@ -116,7 +127,9 @@ class CDirectory : public CEntity {
 
    public:
     Buffer* m_Buffer;
+    map<string, CEntity&> data;
 
+    // TODO delete
     /** @brief Construct a new CDirectory object */
     CDirectory() {
         m_Name = "";
@@ -124,6 +137,7 @@ class CDirectory : public CEntity {
         m_Buffer->reference_count = 1;
     }
 
+    // TODO Delete
     CDirectory(const CDirectory& oldDir) : m_Buffer(oldDir.m_Buffer) {
         m_Name = oldDir.m_Name;
         m_Buffer->reference_count++;
@@ -158,6 +172,35 @@ class CDirectory : public CEntity {
             tmpSize += it.Size() + it.m_Name.size();
         }
         return tmpSize;
+    }
+
+    /**
+     * @brief Deletes a file from the directory specified by the filename.
+     * @param filename Name of the file to delete.
+     */
+    CDirectory& Change(string filename) {
+        auto fileIt = find_if(m_Buffer->files.begin(), m_Buffer->files.end(), [&filename](const CEntity& file) { return file.m_Name == filename; });
+        if (fileIt != m_Buffer->files.end()) {
+            // delete the file form the vector
+            m_Buffer->files.erase(fileIt);
+            return *this;
+        }
+
+        auto linkIt = find_if(m_Buffer->links.begin(), m_Buffer->links.end(), [&filename](const CEntity& link) { return link.m_Name == filename; });
+        if (linkIt != m_Buffer->links.end()) {
+            // delete the link form the vector
+            m_Buffer->links.erase(linkIt);
+            return *this;
+        }
+
+        auto dirIt = find_if(m_Buffer->directories.begin(), m_Buffer->directories.end(), [&filename](const CEntity& dir) { return dir.m_Name == filename; });
+        if (dirIt != m_Buffer->directories.end()) {
+            // delete the directory form the vector
+            m_Buffer->directories.erase(dirIt);
+            return *this;
+        }
+
+        return *this;
     }
 
     /**
@@ -223,41 +266,57 @@ class CDirectory : public CEntity {
     }
 
     /**
-     * @brief Deletes a file from the directory specified by the filename.
-     * @param filename Name of the file to delete.
+     * @brief Finds an entity by name.
+     * Returns it by reference to prevent "cutting" while converting to CEntity
+     * @param filename Name of the file
+     * @return CEntity& 
      */
-    CDirectory& Change(string filename) {
-        auto fileIt = find_if(m_Buffer->files.begin(), m_Buffer->files.end(), [&filename](const CEntity& file) { return file.m_Name == filename; });
-        if (fileIt != m_Buffer->files.end()) {
-            // delete the file form the vector
-            m_Buffer->files.erase(fileIt);
-            return *this;
-        }
-
-        auto linkIt = find_if(m_Buffer->links.begin(), m_Buffer->links.end(), [&filename](const CEntity& link) { return link.m_Name == filename; });
-        if (linkIt != m_Buffer->links.end()) {
-            // delete the link form the vector
-            m_Buffer->links.erase(linkIt);
-            return *this;
-        }
-
-        auto dirIt = find_if(m_Buffer->directories.begin(), m_Buffer->directories.end(), [&filename](const CEntity& dir) { return dir.m_Name == filename; });
-        if (dirIt != m_Buffer->directories.end()) {
-            // delete the directory form the vector
-            m_Buffer->directories.erase(dirIt);
-            return *this;
-        }
-
-        return *this;
-    }
-
-    // Get
     CEntity& Get(string filename) {
-        return searchAll(filename);
+        // Search files
+        auto fileIt = find_if(m_Buffer->files.begin(), m_Buffer->files.end(), [&filename](const CFile& file) { return file.m_Name == filename; });
+        if (fileIt != m_Buffer->files.end()) {
+            return *fileIt;
+        }
+
+        // Search links
+        auto linkIt = find_if(m_Buffer->links.begin(), m_Buffer->links.end(), [&filename](const CLink& link) { return link.m_Name == filename; });
+        if (linkIt != m_Buffer->links.end()) {
+            return *linkIt;
+        }
+
+        // Search links
+        auto dirIt = find_if(m_Buffer->directories.begin(), m_Buffer->directories.end(), [&filename](const CDirectory& dir) { return dir.m_Name == filename; });
+        if (dirIt != m_Buffer->directories.end()) {
+            return *dirIt;
+        }
+
+        throw std::out_of_range("Resource not found.");
     }
 
+    /**
+     * @brief Finds an entity by name.
+     * Returns it by reference to prevent "cutting" while converting to CEntity
+     * @param filename Name of the file
+     * @return CEntity& which is constant
+     */
     const CEntity& Get(string filename) const {
-        return searchAllConst(filename);
+        // Search files
+        auto const fileIt = find_if(m_Buffer->files.cbegin(), m_Buffer->files.cend(), [&filename](const CFile& file) { return file.m_Name == filename; });
+        if (fileIt != m_Buffer->files.cend()) {
+            return *fileIt;
+        }
+        // Search links
+        auto const linkIt = find_if(m_Buffer->links.cbegin(), m_Buffer->links.cend(), [&filename](const CLink& link) { return link.m_Name == filename; });
+        if (linkIt != m_Buffer->links.cend()) {
+            return *linkIt;
+        }
+
+        // Search links
+        auto const dirIt = find_if(m_Buffer->directories.cbegin(), m_Buffer->directories.cend(), [&filename](const CDirectory& dir) { return dir.m_Name == filename; });
+        if (dirIt != m_Buffer->directories.cend()) {
+            return *dirIt;
+        }
+        throw std::out_of_range("Resource not found.");
     }
 
     // operator<<
@@ -281,47 +340,6 @@ class CDirectory : public CEntity {
         std::swap(tmp.m_Name, m_Name);
         std::swap(tmp.m_Buffer, m_Buffer);
         return *this;
-    }
-
-   private:
-    const CEntity& searchAllConst(string& name) const {
-        // Search files
-        auto const fileIt = find_if(m_Buffer->files.cbegin(), m_Buffer->files.cend(), [&name](const CFile& file) { return file.m_Name == name; });
-        if (fileIt != m_Buffer->files.cend()) {
-            return *fileIt;
-        }
-        // Search links
-        auto const linkIt = find_if(m_Buffer->links.cbegin(), m_Buffer->links.cend(), [&name](const CLink& link) { return link.m_Name == name; });
-        if (linkIt != m_Buffer->links.cend()) {
-            return *linkIt;
-        }
-
-        // Search links
-        auto const dirIt = find_if(m_Buffer->directories.cbegin(), m_Buffer->directories.cend(), [&name](const CDirectory& dir) { return dir.m_Name == name; });
-        if (dirIt != m_Buffer->directories.cend()) {
-            return *dirIt;
-        }
-        throw std::out_of_range("Resource not found.");
-    }
-
-    CEntity& searchAll(string& name) const {
-        // Search files
-        auto fileIt = find_if(m_Buffer->files.begin(), m_Buffer->files.end(), [&name](const CFile& file) { return file.m_Name == name; });
-        if (fileIt != m_Buffer->files.end()) {
-            return *fileIt;
-        }
-        // Search links
-        auto linkIt = find_if(m_Buffer->links.begin(), m_Buffer->links.end(), [&name](const CLink& link) { return link.m_Name == name; });
-        if (linkIt != m_Buffer->links.end()) {
-            return *linkIt;
-        }
-
-        // Search links
-        auto dirIt = find_if(m_Buffer->directories.begin(), m_Buffer->directories.end(), [&name](const CDirectory& dir) { return dir.m_Name == name; });
-        if (dirIt != m_Buffer->directories.end()) {
-            return *dirIt;
-        }
-        throw std::out_of_range("Resource not found.");
     }
 };
 
@@ -411,6 +429,7 @@ int main() {
 
     CDirectory root2 = root;
     root2.Change("TestFile.txt", CFile("yesyes=", 123));
+    root2.Change("TestFile.ln", CLink("test/path"));
 
     cout << "================== ROOT1: ==================" << endl;
     cout << root << endl;
