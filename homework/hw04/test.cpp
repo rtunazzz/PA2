@@ -179,36 +179,13 @@ class MyVector {
     }
 
     /** @brief Utility method to print the vector on the standard output. */
-    void print() {
+    void print() const {
         std::cout << "[ " << endl;
         for (int i = 0; i < m_size; ++i) {
             std::cout << "\t" << m_buffer[i] << std::endl;
         }
         std::cout << "] " << endl;
     }
-};
-
-class CCarList {
-   public:
-    // copy cons, op=, dtor ...
-    const char* RZ(void) const;
-    bool AtEnd(void) const;
-    void Next(void);
-
-   private:
-    // todo
-};
-
-class COwnerList {
-   public:
-    // copy cons, op=, dtor ...
-    const char* Name(void) const;
-    const char* Surname(void) const;
-    bool AtEnd(void) const;
-    void Next(void);
-
-   private:
-    // todo
 };
 
 class Car {
@@ -268,6 +245,101 @@ class Car {
            << ")";
         return os;
     }
+};
+
+class CCarList {
+   private:
+    MyVector<Car> m_registry;
+    unsigned int m_index;
+
+    /**
+     * @brief Filters through the _registry passed in
+     * and adds to our list all occurances that match the provided name & surname
+     * @param _registry Registry to filter through
+     * @param _name Name to filter
+     * @param _surname Surname to filter
+     */
+    void filterAndAdd(const MyVector<Car>& _registry, const char* _name, const char* _surname) {
+        for (int i = 0; i < _registry.size(); i++) {
+            if (!_registry[i].isArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
+                m_registry.push_back(Car(_registry[i]));
+            }
+        }
+    }
+
+   public:
+    CCarList() = delete;
+    /** @brief Destroys the CCarList object. */
+    ~CCarList() = default;
+
+    /**
+    * @brief Construct a new CCarList object.
+    * The object then includes cars which where previously owned by the person specified
+    * by the name & surname passed in.
+    * @param _registry Registry to construst the CCarList over
+    * @param _name Name of the person to construct the CCarList over
+    * @param _surname Surname of the person to construct the CCarList over
+    */
+    CCarList(const MyVector<Car>& _registry, const char* _name, const char* _surname) : m_index(0) {
+        filterAndAdd(_registry, _name, _surname);
+    }
+
+    /**
+     * @brief Copyconstructor which constructs a new CCarList object.
+     * Creates a deep copy of the old CCarList passed in.
+     * @param old CCarList to copy
+     */
+    CCarList(const CCarList& old) {
+        for (int i = 0; i < old.m_registry.size(); i++) {
+            m_registry.push_back(old.m_registry[i]);
+        }
+    }
+
+    CCarList& operator=(CCarList old) {
+        std::swap(m_registry, old.m_registry);
+        return *this;
+    }
+
+    /**
+     * @brief Returns the license plate number of the current car.
+     * @return const char* License plate number
+     */
+    const char* RZ(void) const { return m_registry[m_index].rz; };
+
+    /**
+     * @brief Checks whether or not we are in the end of the list.
+     * @return true When we are in the end of the list
+     * @return false When we aren't in the end of the list)
+     */
+    bool AtEnd(void) const { return m_registry.size() <= m_index; }
+
+    /** @brief Moves the current position in the list one forward */
+    void Next(void) { m_index++; }
+};
+
+class COwnerList {
+   private:
+    // todo
+   public:
+    // copy cons, op=, dtor ...
+    /**
+     * @brief Returns the name of the owner we're currently on.
+     * @return const char* Name
+     */
+    const char* Name(void) const;
+    /**
+     * @brief Returns the surname of the owner we're currently on.
+     * @return const char* Surname
+     */
+    const char* Surname(void) const;
+    /**
+     * @brief Checks whether or not we are in the end of the list.
+     * @return true When we are in the end of the list
+     * @return false When we aren't in the end of the list)
+     */
+    bool AtEnd(void) const;
+    /** @brief Moves the current position in the list one forward */
+    void Next(void);
 };
 
 class CRegister {
@@ -393,7 +465,7 @@ class CRegister {
         }
 
         cout << "============================================================" << endl;
-        cout << RZ << " was owned by" << count << " people." << endl;
+        cout << RZ << " was owned by " << count << " people." << endl;
         cout << "============================================================" << endl;
 
         return count;
@@ -437,8 +509,19 @@ class CRegister {
         // not found
         return false;
     }
-    CCarList ListCars(const char* name,
-                      const char* surname) const;
+
+    /**
+     * @brief Searches through our data and returns an object
+     * which can be used to iterate over the found records.
+     * @param _name Name to list
+     * @param _surname Surname to list
+     * @return CCarList Object to iterate over
+     */
+    CCarList ListCars(const char* name, const char* surname) const {
+        m_data.print();
+        return CCarList(m_data, name, surname);
+    }
+
     COwnerList ListOwners(const char* RZ) const;
 };
 
@@ -466,9 +549,9 @@ int main(void) {
     strncpy(surname, "Smith", sizeof(surname));
     assert(b0.AddCar("XYZ-11-22", name, surname) == true);
     assert(b0.CountCars("John", "Hacker") == 1);
-    return 0;
     assert(matchList(b0.ListCars("John", "Hacker"), "ABC-32-22"));
     assert(b0.CountOwners("ABC-12-34") == 1);
+    return 0;
     COwnerList ol0 = b0.ListOwners("ABC-12-34");
     assert(!ol0.AtEnd() && !strcmp(ol0.Name(), "John") && !strcmp(ol0.Surname(), "Smith"));
     ol0.Next();
