@@ -260,7 +260,7 @@ class CCarList {
      * @param _surname Surname to filter
      */
     void filterAndAdd(const MyVector<Car>& _registry, const char* _name, const char* _surname) {
-        for (int i = 0; i < _registry.size(); i++) {
+        for (int i = _registry.size() - 1; i >= 0; i--) {
             if (!_registry[i].isArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
                 m_registry.push_back(Car(_registry[i]));
             }
@@ -319,27 +319,72 @@ class CCarList {
 
 class COwnerList {
    private:
-    // todo
+    MyVector<Car> m_registry;
+    unsigned int m_index;
+
+    /**
+     * @brief Filters through the _registry passed in
+     * and adds to our list all occurances that match the provided name & surname
+     * @param _registry Registry to filter through
+    * @param _rz License plate number to construct the COwnerList over
+     */
+    void filterAndAdd(const MyVector<Car>& _registry, const char* _rz) {
+        for (int i = _registry.size() - 1; i >= 0; i--) {
+            if (strcmp(_rz, _registry[i].rz) == 0) {
+                m_registry.push_back(Car(_registry[i]));
+            }
+        }
+    }
+
    public:
-    // copy cons, op=, dtor ...
+    COwnerList() = delete;
+    /** @brief Destroys the COwnerList object. */
+    ~COwnerList() = default;
+
+    /**
+    * @brief Construct a new COwnerList object.
+    * The object then includes people which own or previously owned the car specified
+    * by the license place number passed in.
+    * @param _registry Registry to construst the COwnerList over
+    * @param _rz License plate number to construct the COwnerList over
+    */
+    COwnerList(const MyVector<Car>& _registry, const char* _rz) : m_index(0) {
+        filterAndAdd(_registry, _rz);
+    }
+
+    /**
+     * @brief Copyconstructor which constructs a new COwnerList object.
+     * Creates a deep copy of the old COwnerList passed in.
+     * @param old COwnerList to copy
+     */
+    COwnerList(const COwnerList& old) {
+        for (int i = 0; i < old.m_registry.size(); i++) {
+            m_registry.push_back(old.m_registry[i]);
+        }
+    }
+
+    COwnerList& operator=(COwnerList old) {
+        std::swap(m_registry, old.m_registry);
+        return *this;
+    }
     /**
      * @brief Returns the name of the owner we're currently on.
      * @return const char* Name
      */
-    const char* Name(void) const;
+    const char* Name(void) const { return m_registry[m_index].name; }
     /**
      * @brief Returns the surname of the owner we're currently on.
      * @return const char* Surname
      */
-    const char* Surname(void) const;
+    const char* Surname(void) const { return m_registry[m_index].surname; }
     /**
      * @brief Checks whether or not we are in the end of the list.
      * @return true When we are in the end of the list
      * @return false When we aren't in the end of the list)
      */
-    bool AtEnd(void) const;
+    bool AtEnd(void) const { return m_registry.size() <= m_index; }
     /** @brief Moves the current position in the list one forward */
-    void Next(void);
+    void Next(void) { m_index++; }
 };
 
 class CRegister {
@@ -381,16 +426,16 @@ class CRegister {
         }
         // otherwise add it
 
-        cout << "============================================================" << endl;
-        cout << "Before adding:" << endl;
-        m_data.print();
-        cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
+        // cout << "============================================================" << endl;
+        // cout << "Before adding:" << endl;
+        // m_data.print();
+        // cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
 
         m_data.push_back(Car(rz, name, surname));
 
-        cout << "After adding:" << endl;
-        m_data.print();
-        cout << "============================================================" << endl;
+        // cout << "After adding:" << endl;
+        // m_data.print();
+        // cout << "============================================================" << endl;
 
         // TODO is this ^ correct?
         return true;
@@ -407,16 +452,16 @@ class CRegister {
         for (int i = 0; i < m_data.size(); i++) {
             if (strcmp(rz, m_data[i].rz) == 0) {
                 // when found, remove it
-                cout << "============================================================" << endl;
-                cout << "Before delete:" << endl;
-                m_data.print();
+                // cout << "============================================================" << endl;
+                // cout << "Before delete:" << endl;
+                // m_data.print();
 
-                cout << "=============== DELETING rz: '" << m_data[i].rz << "' ===============" << endl;
+                // cout << "=============== DELETING rz: '" << m_data[i].rz << "' ===============" << endl;
                 m_data.erase(i);
 
-                cout << "After delete:" << endl;
-                m_data.print();
-                cout << "============================================================" << endl;
+                // cout << "After delete:" << endl;
+                // m_data.print();
+                // cout << "============================================================" << endl;
 
                 return true;
             }
@@ -464,9 +509,9 @@ class CRegister {
             }
         }
 
-        cout << "============================================================" << endl;
-        cout << RZ << " was owned by " << count << " people." << endl;
-        cout << "============================================================" << endl;
+        // cout << "============================================================" << endl;
+        // cout << RZ << " was owned by " << count << " people." << endl;
+        // cout << "============================================================" << endl;
 
         return count;
     }
@@ -490,18 +535,18 @@ class CRegister {
                     return false;
                 }
                 // TODO Optimize this memory allocation & deallocation
-                cout << "============================================================" << endl;
-                cout << "Before transfer:" << endl;
-                m_data.print();
+                // cout << "============================================================" << endl;
+                // cout << "Before transfer:" << endl;
+                // m_data.print();
 
-                cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
+                // cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
 
                 m_data[i].archive();
                 m_data.push_back(Car(rz, nName, nSurname));
 
-                cout << "After transfer:" << endl;
-                m_data.print();
-                cout << "============================================================" << endl;
+                // cout << "After transfer:" << endl;
+                // m_data.print();
+                // cout << "============================================================" << endl;
 
                 return true;
             }
@@ -518,11 +563,14 @@ class CRegister {
      * @return CCarList Object to iterate over
      */
     CCarList ListCars(const char* name, const char* surname) const {
-        m_data.print();
+        // m_data.print();
         return CCarList(m_data, name, surname);
     }
 
-    COwnerList ListOwners(const char* RZ) const;
+    COwnerList ListOwners(const char* RZ) const {
+        // m_data.print();
+        return COwnerList(m_data, RZ);
+    }
 };
 
 #ifndef __PROGTEST__
@@ -551,7 +599,6 @@ int main(void) {
     assert(b0.CountCars("John", "Hacker") == 1);
     assert(matchList(b0.ListCars("John", "Hacker"), "ABC-32-22"));
     assert(b0.CountOwners("ABC-12-34") == 1);
-    return 0;
     COwnerList ol0 = b0.ListOwners("ABC-12-34");
     assert(!ol0.AtEnd() && !strcmp(ol0.Name(), "John") && !strcmp(ol0.Surname(), "Smith"));
     ol0.Next();
