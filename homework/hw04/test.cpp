@@ -171,7 +171,6 @@ class MyVector {
     }
 
     void erase(const unsigned int position) {
-        delete &m_buffer[position];
         m_size--;
         // fill the deleted position
         for (int i = (int)position; i < m_size; i++) {
@@ -377,6 +376,7 @@ int main(void) {
     strncpy(surname, "Smith", sizeof(surname));
     assert(b0.AddCar("XYZ-11-22", name, surname) == true);
 
+    b0.DelCar("ABC-32-22");
     return 0;
 
     assert(b0.CountCars("John", "Hacker") == 1);
