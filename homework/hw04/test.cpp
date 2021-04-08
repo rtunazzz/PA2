@@ -216,10 +216,11 @@ class Car {
     char* rz;
     char* name;
     char* surname;
+    bool m_archived;
 
-    Car() : rz(nullptr), name(nullptr), surname(nullptr) {}
+    Car() : rz(nullptr), name(nullptr), surname(nullptr), m_archived(false) {}
 
-    Car(const char* _rz, const char* _name, const char* _surname) {
+    Car(const char* _rz, const char* _name, const char* _surname) : m_archived(false) {
         rz = new char[strlen(_rz) + 1];
         strcpy(rz, _rz);
 
@@ -236,7 +237,7 @@ class Car {
         delete surname;
     }
 
-    Car(const Car& old) {
+    Car(const Car& old) : m_archived(old.m_archived) {
         rz = new char[strlen(old.rz) + 1];
         strcpy(rz, old.rz);
 
@@ -251,11 +252,19 @@ class Car {
         std::swap(rz, old.rz);
         std::swap(name, old.name);
         std::swap(surname, old.surname);
+        std::swap(m_archived, old.m_archived);
         return *this;
+    }
+    void archive() {
+        m_archived = true;
+    }
+
+    bool isArchived() const {
+        return m_archived;
     }
 
     friend ostream& operator<<(ostream& os, const Car& c) {
-        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname;
+        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << "(archived: " << c.isArchived() << ")";
         return os;
     }
 };
@@ -354,7 +363,7 @@ class CRegister {
 
         // Iterate over our container and increase count if the name and surname match.
         for (int i = 0; i < m_data.size(); i++) {
-            if (strcmp(name, m_data[i].name) == 0 && strcmp(surname, m_data[i].surname) == 0) {
+            if (!m_data[i].isArchived() && strcmp(name, m_data[i].name) == 0 && strcmp(surname, m_data[i].surname) == 0) {
                 count++;
             }
         }
@@ -362,6 +371,29 @@ class CRegister {
         // cout << "============================================================" << endl;
         // cout << name << " " << surname << " has " << count << " cars." << endl;
         // cout << "============================================================" << endl;
+
+        return count;
+    }
+
+    /**
+     * @brief Counts how many owners a car had in the history of our register.
+     * @param RZ License plate of the car we're looking for
+     * @return int Number of owners
+     */
+    int CountOwners(const char* RZ) const {
+        int count = 0;
+
+        // Iterate over our container and increase count if the RZ.
+        for (int i = 0; i < m_data.size(); i++) {
+            if (strcmp(RZ, m_data[i].rz) == 0) {
+                // TODO Add a check whether or not we already counted the owner
+                count++;
+            }
+        }
+
+        cout << "============================================================" << endl;
+        cout << RZ << " was owned by" << count << " people." << endl;
+        cout << "============================================================" << endl;
 
         return count;
     }
@@ -413,7 +445,6 @@ class CRegister {
     CCarList ListCars(const char* name,
                       const char* surname) const;
     COwnerList ListOwners(const char* RZ) const;
-    int CountOwners(const char* RZ) const;
 };
 
 #ifndef __PROGTEST__
