@@ -19,10 +19,10 @@ class MyVector {
     T* m_buffer;
 
     /** @brief Maximum capacity of our buffer (data) */
-    unsigned int m_max_capacity;
+    int m_max_capacity;
 
     /** @brief Size of our buffer (data) */
-    unsigned int m_size;
+    int m_size;
 
     /**
      * @brief Swaps the vector values passed in with our current vector.
@@ -39,7 +39,7 @@ class MyVector {
     /** @brief Increases (2x) the capacity of our container. */
     void increase_capacity() {
         // Initialize the new capactity
-        unsigned int new_max_capacity = 2 * (this->m_max_capacity);
+        int new_max_capacity = 2 * (this->m_max_capacity);
         if (new_max_capacity == 0) new_max_capacity = 1;  // TODO Increase for better performance
 
         // Initialize a new buffer and allocate memory
@@ -101,7 +101,7 @@ class MyVector {
      * @param index 
      * @return T& 
      */
-    T& operator[](unsigned int index) {
+    T& operator[](int index) {
         return m_buffer[index];
     };
 
@@ -111,7 +111,7 @@ class MyVector {
      * @param index 
      * @return T& 
      */
-    const T& operator[](unsigned int index) const {
+    const T& operator[](int index) const {
         return m_buffer[index];
     };
 
@@ -141,9 +141,9 @@ class MyVector {
 
     /**
      * @brief Returns the size of our container.
-     * @return unsigned int 
+     * @return  int 
      */
-    unsigned int size() const { return m_size; };
+    int size() const { return m_size; };
 
     /**
      * @brief Returns the last element from our container.
@@ -156,7 +156,7 @@ class MyVector {
      * @param position index of where the element should be placed
      * @param var value which is to be placed at the possition passed in
      */
-    void insert(const unsigned int position, const T& var) {
+    void insert(const int position, const T& var) {
         // increase capacity if needed
         if (m_size >= m_max_capacity) {
             increase_capacity();
@@ -170,7 +170,7 @@ class MyVector {
         m_size++;
     }
 
-    void erase(const unsigned int position) {
+    void erase(const int position) {
         m_size--;
         // fill the "deleted" position
         for (int i = (int)position; i < m_size; i++) {
@@ -250,7 +250,7 @@ class Car {
 class CCarList {
    private:
     MyVector<Car> m_registry;
-    unsigned int m_index;
+    int m_index;
 
     /**
      * @brief Filters through the _registry passed in
@@ -260,7 +260,7 @@ class CCarList {
      * @param _surname Surname to filter
      */
     void filterAndAdd(const MyVector<Car>& _registry, const char* _name, const char* _surname) {
-        for (int i = _registry.size() - 1; i >= 0; i--) {
+        for (int i = _registry.size() - 1; i > -1; i--) {
             if (!_registry[i].isArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
                 m_registry.push_back(Car(_registry[i]));
             }
@@ -320,7 +320,7 @@ class CCarList {
 class COwnerList {
    private:
     MyVector<Car> m_registry;
-    unsigned int m_index;
+    int m_index;
 
     /**
      * @brief Filters through the _registry passed in
@@ -329,7 +329,7 @@ class COwnerList {
     * @param _rz License plate number to construct the COwnerList over
      */
     void filterAndAdd(const MyVector<Car>& _registry, const char* _rz) {
-        for (int i = _registry.size() - 1; i >= 0; i--) {
+        for (int i = _registry.size() - 1; i > -1; i--) {
             if (strcmp(_rz, _registry[i].rz) == 0) {
                 m_registry.push_back(Car(_registry[i]));
             }
@@ -437,7 +437,6 @@ class CRegister {
         // m_data.print();
         // cout << "============================================================" << endl;
 
-        // TODO is this ^ correct?
         return true;
     }
 
@@ -534,7 +533,6 @@ class CRegister {
                     // owners are the same
                     return false;
                 }
-                // TODO Optimize this memory allocation & deallocation
                 // cout << "============================================================" << endl;
                 // cout << "Before transfer:" << endl;
                 // m_data.print();
@@ -570,6 +568,10 @@ class CRegister {
     COwnerList ListOwners(const char* RZ) const {
         // m_data.print();
         return COwnerList(m_data, RZ);
+    }
+
+    void print() {
+        m_data.print();
     }
 };
 
@@ -647,6 +649,13 @@ int main(void) {
     COwnerList ol3 = b2.ListOwners("AAA-AA-AA");
     assert(ol3.AtEnd());
 
+    // CUSTOM TESTS
+    CRegister b3;
+    b3.AddCar("ABC-12-34", "John", "Smith");
+    b3.Transfer("ABC-12-34", "Jeremy", "Black");
+    b3.Transfer("ABC-12-34", "John", "Smith");
+    b3.Transfer("ABC-12-34", "Jeremy", "Black");
+    assert(b3.CountOwners("ABC-12-34") == 2);
     return 0;
 }
 #endif /* __PROGTEST__ */
