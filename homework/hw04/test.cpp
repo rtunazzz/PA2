@@ -264,7 +264,8 @@ class Car {
     }
 
     friend ostream& operator<<(ostream& os, const Car& c) {
-        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << "(archived: " << c.isArchived() << ")";
+        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << " (archived: " << (c.isArchived() ? "true" : "false")
+           << ")";
         return os;
     }
 };
@@ -419,21 +420,15 @@ class CRegister {
                 // TODO Optimize this memory allocation & deallocation
                 cout << "============================================================" << endl;
                 cout << "Before transfer:" << endl;
-                cout << m_data[i] << endl;
+                m_data.print();
 
                 cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
 
-                // update the owner's name
-                delete m_data[i].name;
-                m_data[i].name = new char[strlen(nName) + 1];
-                strcpy(m_data[i].name, nName);
-                // update the owner's surname
-                delete m_data[i].surname;
-                m_data[i].surname = new char[strlen(nSurname) + 1];
-                strcpy(m_data[i].surname, nSurname);
+                m_data[i].archive();
+                m_data.push_back(Car(rz, nName, nSurname));
 
                 cout << "After transfer:" << endl;
-                cout << m_data[i] << endl;
+                m_data.print();
                 cout << "============================================================" << endl;
 
                 return true;
