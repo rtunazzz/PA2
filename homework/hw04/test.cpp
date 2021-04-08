@@ -172,7 +172,7 @@ class MyVector {
 
     void erase(const unsigned int position) {
         m_size--;
-        // fill the deleted position
+        // fill the "deleted" position
         for (int i = (int)position; i < m_size; i++) {
             m_buffer[i] = m_buffer[i + 1];
         }
