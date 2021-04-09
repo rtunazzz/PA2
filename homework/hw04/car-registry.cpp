@@ -24,18 +24,6 @@ class MyVector {
     /** @brief Size of our buffer (data) */
     int m_size;
 
-    /**
-     * @brief Swaps the vector values passed in with our current vector.
-     * Expected to be used with the copy-and-swap idiom
-     * @param old 
-     */
-    void swap(MyVector<T>& old) {
-        m_buffer = old.m_buffer;
-        m_max_capacity = old.m_max_capacity;
-        m_size = old.m_size;
-        old.m_buffer = nullptr;
-    }
-
     /** @brief Increases (2x) the capacity of our container. */
     void increase_capacity() {
         // Initialize the new capactity
@@ -93,7 +81,9 @@ class MyVector {
      * @return MyVector<T>&
      */
     MyVector<T>& operator=(MyVector<T> old) {
-        MyVector::swap(old);
+        std::swap(m_buffer, old.m_buffer);
+        std::swap(m_max_capacity, old.m_max_capacity);
+        std::swap(m_size, old.m_size);
         return *this;
     }
 
