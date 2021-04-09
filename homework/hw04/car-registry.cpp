@@ -15,20 +15,20 @@ using namespace std;
 template <typename T>
 class MyVector {
    private:
-    /** @brief Buffer (array) which holds our data */
+    /** @brief Buffer (pointer array) which holds our data */
     T* m_buffer;
 
-    /** @brief Maximum capacity of our buffer (data) */
+    /** @brief Maximum capacity of our buffer (pointer array) */
     int m_max_capacity;
 
-    /** @brief Size of our buffer (data) */
+    /** @brief Size of our buffer (pointer array) */
     int m_size;
 
     /** @brief Increases (2x) the capacity of our container. */
     void increase_capacity() {
         // Initialize the new capactity
         int new_max_capacity = 2 * m_max_capacity;
-        if (new_max_capacity == 0) new_max_capacity = 1;  // TODO increase for better performance
+        if (new_max_capacity == 0) new_max_capacity = 10;
 
         // Initialize a new buffer and allocate memory
         T* new_buffer = new T[new_max_capacity];
@@ -187,16 +187,27 @@ class MyVector {
     }
 };
 
-class Car {
+class CarRecord {
    public:
+    /** @brief License Plate number of the car */
     char* rz;
+    /** @brief Name of the car's owner */
     char* name;
+    /** @brief Surname of the car's owner */
     char* surname;
+    /** @brief Whether or not is the card record archived */
     bool m_archived;
 
-    Car() : rz(nullptr), name(nullptr), surname(nullptr), m_archived(false) {}
+    /** @brief Construct a new CarRecord object without any parameters */
+    CarRecord() : rz(nullptr), name(nullptr), surname(nullptr), m_archived(false) {}
 
-    Car(const char* _rz, const char* _name, const char* _surname) : m_archived(false) {
+    /**
+     * @brief Construct a new CarRecord object with the parameters specified
+     * @param _rz License Plate number of the car
+     * @param _name Name of the car's owner
+     * @param _surname Surname of the car's owner
+     */
+    CarRecord(const char* _rz, const char* _name, const char* _surname) : m_archived(false) {
         rz = new char[strlen(_rz) + 1];
         strcpy(rz, _rz);
 
@@ -207,13 +218,13 @@ class Car {
         strcpy(surname, _surname);
     }
 
-    ~Car() {
+    ~CarRecord() {
         delete rz;
         delete name;
         delete surname;
     }
 
-    Car(const Car& old) : m_archived(old.m_archived) {
+    CarRecord(const CarRecord& old) : m_archived(old.m_archived) {
         rz = new char[strlen(old.rz) + 1];
         strcpy(rz, old.rz);
 
@@ -224,13 +235,14 @@ class Car {
         strcpy(surname, old.surname);
     }
 
-    Car& operator=(Car old) {
+    CarRecord& operator=(CarRecord old) {
         std::swap(rz, old.rz);
         std::swap(name, old.name);
         std::swap(surname, old.surname);
         std::swap(m_archived, old.m_archived);
         return *this;
     }
+
     void archive() {
         m_archived = true;
     }
@@ -239,7 +251,7 @@ class Car {
         return m_archived;
     }
 
-    friend ostream& operator<<(ostream& os, const Car& c) {
+    friend ostream& operator<<(ostream& os, const CarRecord& c) {
         os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << " (archived: " << (c.isArchived() ? "true" : "false")
            << ")";
         return os;
@@ -248,7 +260,7 @@ class Car {
 
 class CCarList {
    private:
-    MyVector<Car> m_registry;
+    MyVector<CarRecord> m_registry;
     int m_index;
 
     /**
@@ -258,10 +270,10 @@ class CCarList {
      * @param _name Name to filter
      * @param _surname Surname to filter
      */
-    void filterAndAdd(const MyVector<Car>& _registry, const char* _name, const char* _surname) {
+    void filterAndAdd(const MyVector<CarRecord>& _registry, const char* _name, const char* _surname) {
         for (int i = _registry.size() - 1; i > -1; i--) {
             if (!_registry[i].isArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
-                m_registry.push_back(Car(_registry[i]));
+                m_registry.push_back(CarRecord(_registry[i]));
             }
         }
     }
@@ -279,7 +291,7 @@ class CCarList {
     * @param _name Name of the person to construct the CCarList over
     * @param _surname Surname of the person to construct the CCarList over
     */
-    CCarList(const MyVector<Car>& _registry, const char* _name, const char* _surname) : m_index(0) {
+    CCarList(const MyVector<CarRecord>& _registry, const char* _name, const char* _surname) : m_index(0) {
         filterAndAdd(_registry, _name, _surname);
     }
 
@@ -322,7 +334,7 @@ class CCarList {
 
 class COwnerList {
    private:
-    MyVector<Car> m_registry;
+    MyVector<CarRecord> m_registry;
     int m_index;
 
     /**
@@ -331,11 +343,11 @@ class COwnerList {
      * @param _registry Registry to filter through
     * @param _rz License plate number to construct the COwnerList over
      */
-    void filterAndAdd(const MyVector<Car>& _registry, const char* _rz) {
+    void filterAndAdd(const MyVector<CarRecord>& _registry, const char* _rz) {
         for (int i = _registry.size() - 1; i > -1; i--) {
             if (strcmp(_rz, _registry[i].rz) == 0) {
                 // TODO keep or remove previous owners?
-                m_registry.push_back(Car(_registry[i]));
+                m_registry.push_back(CarRecord(_registry[i]));
             }
         }
     }
@@ -352,7 +364,7 @@ class COwnerList {
     * @param _registry Registry to construst the COwnerList over
     * @param _rz License plate number to construct the COwnerList over
     */
-    COwnerList(const MyVector<Car>& _registry, const char* _rz) : m_index(0) {
+    COwnerList(const MyVector<CarRecord>& _registry, const char* _rz) : m_index(0) {
         filterAndAdd(_registry, _rz);
     }
 
@@ -401,7 +413,7 @@ class COwnerList {
 
 class CRegister {
    private:
-    MyVector<Car> m_data;
+    MyVector<CarRecord> m_data;
 
    public:
     CRegister() = default;
@@ -441,7 +453,7 @@ class CRegister {
         // m_data.print();
         // cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
 
-        m_data.push_back(Car(rz, name, surname));
+        m_data.push_back(CarRecord(rz, name, surname));
 
         // cout << "After adding:" << endl;
         // m_data.print();
@@ -567,7 +579,7 @@ class CRegister {
                 // cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
 
                 m_data[i].archive();
-                m_data.push_back(Car(rz, nName, nSurname));
+                m_data.push_back(CarRecord(rz, nName, nSurname));
 
                 // cout << "After transfer:" << endl;
                 // m_data.print();
@@ -691,7 +703,57 @@ int main(void) {
     b4.DelCar("XYZ-11-22");
     b4.Transfer("BBB-99-99", "John", "Smith");
     b4.Transfer("ABC-12-34", "John", "Smith");
-    b4.Transfer("XYZ-11-22", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("ABC-12-34", "Jeremy", "Black");
     b4.CountCars("George", "White");
     return 0;
 }
