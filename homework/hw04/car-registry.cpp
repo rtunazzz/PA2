@@ -218,12 +218,17 @@ class CarRecord {
         strcpy(surname, _surname);
     }
 
+    /** @brief Destroy the Car Record object and dealocates memory */
     ~CarRecord() {
         delete rz;
         delete name;
         delete surname;
     }
 
+    /**
+     * @brief Construct a new Car Record object from the old car provided
+     * @param old CarRecord to copy
+     */
     CarRecord(const CarRecord& old) : m_archived(old.m_archived) {
         rz = new char[strlen(old.rz) + 1];
         strcpy(rz, old.rz);
@@ -243,10 +248,16 @@ class CarRecord {
         return *this;
     }
 
+    /** @brief Archives the CarRecord */
     void archive() {
         m_archived = true;
     }
 
+    /**
+     * @brief Checks whether or not is the current car record archived
+     * @return true When it is archived
+     * @return false When it isn't archived
+     */
     bool isArchived() const {
         return m_archived;
     }
