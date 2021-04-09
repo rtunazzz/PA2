@@ -30,9 +30,20 @@ class CEntity {
 
     virtual ~CEntity() = default;
     virtual int Size() const { return -1; }
+
+    /**
+     * @brief Creates a clone of the current CEntity.
+     * @return CEntity* Pointer to the clone
+     */
     virtual CEntity* Clone() const {
         return new CEntity(*this);
     }
+
+    /**
+     * @brief Print utility method.
+     * @param os Stream to print to
+     * @return ostream& Stream that was passed in
+     */
     virtual ostream& Print(ostream& os) const {
         return os << m_Name;
     }
@@ -57,6 +68,10 @@ class CFile : public CEntity {
      */
     CFile(const string hash, int filesize) : CEntity(), m_Hash(hash), m_Filesize(filesize) {}
 
+    /**
+     * @brief Creates a clone of the current CFile.
+     * @return CEntity* Pointer to the clone
+     */
     CEntity* Clone() const override {
         return new CFile(*this);
     }
@@ -81,8 +96,13 @@ class CFile : public CEntity {
         return *this;
     }
 
+    /**
+     * @brief Print utility method for overriding the default (parent) Print.
+     * @param os Stream to print to
+     * @return ostream& Stream that was passed in
+     */
     ostream& Print(ostream& os) const override {
-        return os << Size() << "\t" << m_Name << " " << m_Hash;
+        return os << Size() << "\t" << m_Name << " " << m_Hash << endl;
     }
 
     /**
@@ -110,6 +130,10 @@ class CLink : public CEntity {
      */
     CLink(const string path) : CEntity(), m_Path(path) {}
 
+    /**
+     * @brief Creates a clone of the current CLink.
+     * @return CEntity* Pointer to the clone
+     */
     CEntity* Clone() const override {
         return new CLink(*this);
     }
@@ -132,8 +156,13 @@ class CLink : public CEntity {
         return *this;
     }
 
+    /**
+     * @brief Print utility method for overriding the default (parent) Print.
+     * @param os Stream to print to
+     * @return ostream& Stream that was passed in
+     */
     ostream& Print(ostream& os) const override {
-        return os << Size() << "\t" << m_Name << " -> " << m_Path;
+        return os << Size() << "\t" << m_Name << " -> " << m_Path << endl;
     }
 
     /**
@@ -153,10 +182,14 @@ class CLink : public CEntity {
 class CDirectory : public CEntity {
    public:
     /** @brief Holds data about our entities */
-    map<string, CEntity*> data;
+    map<string, shared_ptr<CEntity>> data;
 
     CDirectory() : CEntity() {}
 
+    /**
+     * @brief Creates a clone of the current CDirectory.
+     * @return CEntity* Pointer to the clone
+     */
     CEntity* Clone() const override {
         return new CDirectory(*this);
     }
@@ -187,7 +220,7 @@ class CDirectory : public CEntity {
         if (ent) {
             return Change(filename, *ent);
         } else {
-            auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
+            auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, shared_ptr<CEntity>>& p) { return p.first == filename; });
             if (it != data.end()) {
                 // delete the file from the map
                 // delete it->second;
@@ -205,14 +238,13 @@ class CDirectory : public CEntity {
      * @param entity const reference to the entity to add/ replace
      */
     CDirectory& Change(string filename, const CEntity& entity) {
-        auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
+        auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, shared_ptr<CEntity>>& p) { return p.first == filename; });
 
-        CEntity* newEntity = it->second->Clone();  // TODO handle deleting
+        shared_ptr<CEntity> newEntity = shared_ptr<CEntity>(entity.Clone());
         newEntity->m_Name = filename;
         if (it == data.end()) {
             // Insert the new file
-            auto p = make_pair(filename, newEntity);
-            data.insert(p);
+            data.insert(make_pair(filename, newEntity));
         } else {
             // Otherwise just change the pointer to the new file
             // delete it->second;
@@ -230,7 +262,7 @@ class CDirectory : public CEntity {
      */
     CEntity& Get(string filename) {
         // Search files
-        auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
+        auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, shared_ptr<CEntity>>& p) { return p.first == filename; });
         if (it != data.end()) {
             return *(it->second);
         }
@@ -246,7 +278,7 @@ class CDirectory : public CEntity {
      */
     const CEntity& Get(string filename) const {
         // Search files
-        auto it = find_if(data.cbegin(), data.cend(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
+        auto it = find_if(data.cbegin(), data.cend(), [&filename](const pair<string, shared_ptr<CEntity>>& p) { return p.first == filename; });
         if (it != data.cend()) {
             return *(it->second);
         }
@@ -254,6 +286,11 @@ class CDirectory : public CEntity {
         throw std::out_of_range("Resource not found.");
     }
 
+    /**
+     * @brief Print utility method for overriding the default (parent) Print.
+     * @param os Stream to print to
+     * @return ostream& Stream that was passed in
+     */
     ostream& Print(ostream& os) const override {
         return os << Size() << "\t" << m_Name << "/" << endl;
     }
