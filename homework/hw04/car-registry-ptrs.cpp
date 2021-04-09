@@ -40,7 +40,7 @@ class MyVector {
 
         // Delete the old buffer & assign to member variables
         if (m_buffer != nullptr)
-            delete[] m_buffer;
+            delete[](m_buffer);
 
         m_buffer = new_buffer;
         m_max_capacity = new_max_capacity;
@@ -96,10 +96,9 @@ class MyVector {
     T& operator[](int index) {
         if (index >= m_size) {
             throw std::out_of_range("index is greater or equal to the container's size!");
-            exit(0);
         }
         return m_buffer[index];
-    };
+    }
 
     /**
      * @brief Overloads the [] operator
@@ -110,10 +109,9 @@ class MyVector {
     const T& operator[](int index) const {
         if (index >= m_size) {
             throw std::out_of_range("index is greater or equal to the container's size!");
-            exit(0);
         }
         return m_buffer[index];
-    };
+    }
 
     // ====================================== METHODS ======================================
     /**
@@ -142,13 +140,13 @@ class MyVector {
      * @brief Returns the size of our container.
      * @return  int 
      */
-    int size() const { return m_size; };
+    int size() const { return m_size; }
 
     /**
      * @brief Returns the last element from our container.
      * @return T& 
      */
-    T& back() { return m_buffer[m_size - 1]; };
+    T& back() { return m_buffer[m_size - 1]; }
 
     /**
      * @brief Inserts an element onto the position passed in.
@@ -162,7 +160,7 @@ class MyVector {
         }
         // move elements starting from the position passed in one index further,
         // which leaves the position index empty
-        for (int i = (int)m_size; i > position; --i) {
+        for (int i = m_size; i > position; --i) {
             m_buffer[i] = m_buffer[i - 1];
         }
         m_buffer[position] = var;
@@ -172,18 +170,18 @@ class MyVector {
     void erase(const int position) {
         // fill the "deleted" position
         m_size -= 1;
-        for (int i = (int)position; i < m_size; i++) {
+        for (int i = position; i < m_size; i++) {
             m_buffer[i] = m_buffer[i + 1];
         }
     }
 
     /** @brief Utility method to print the vector on the standard output. */
     void print() const {
-        std::cout << "[ " << endl;
+        std::cout << "[ " << std::endl;
         for (int i = 0; i < m_size; ++i) {
-            std::cout << "\t" << m_buffer[i] << std::endl;
+            std::cout << "\t" << *m_buffer[i] << std::endl;
         }
-        std::cout << "] " << endl;
+        std::cout << "] " << std::endl;
     }
 };
 
@@ -277,7 +275,7 @@ class CarRecord {
 /** @brief Represents an iterator for cars in a car registry */
 class CCarList {
    private:
-    MyVector<CarRecord> m_registry;
+    MyVector<CarRecord*> m_registry;
     int m_index;
 
     /**
@@ -287,18 +285,22 @@ class CCarList {
      * @param _name Name to filter
      * @param _surname Surname to filter
      */
-    void filterAndAdd(const MyVector<CarRecord>& _registry, const char* _name, const char* _surname) {
+    void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _name, const char* _surname) {
         for (int i = _registry.size() - 1; i > -1; i--) {
-            if (!_registry[i].IsArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
-                m_registry.push_back(CarRecord(_registry[i]));
+            if (!_registry[i]->IsArchived() && strcmp(_name, _registry[i]->name) == 0 && strcmp(_surname, _registry[i]->surname) == 0) {
+                m_registry.push_back(new CarRecord(*_registry[i]));
             }
         }
     }
 
    public:
-    CCarList() = delete;
+    CCarList() = default;
     /** @brief Destroys the CCarList object. */
-    ~CCarList() = default;
+    ~CCarList() {
+        for (int i = 0; i < m_registry.size(); i++) {
+            delete m_registry[i];
+        }
+    }
 
     /**
     * @brief Construct a new CCarList object.
@@ -308,7 +310,7 @@ class CCarList {
     * @param _name Name of the person to construct the CCarList over
     * @param _surname Surname of the person to construct the CCarList over
     */
-    CCarList(const MyVector<CarRecord>& _registry, const char* _name, const char* _surname) : m_index(0) {
+    CCarList(const MyVector<CarRecord*>& _registry, const char* _name, const char* _surname) : m_index(0) {
         filterAndAdd(_registry, _name, _surname);
     }
 
@@ -319,13 +321,13 @@ class CCarList {
      */
     CCarList(const CCarList& old) : m_index(old.m_index) {
         for (int i = 0; i < old.m_registry.size(); i++) {
-            m_registry.push_back(old.m_registry[i]);
+            m_registry.push_back(new CarRecord(*old.m_registry[i]));
         }
     }
 
     CCarList& operator=(CCarList old) {
-        std::swap(m_registry, old.m_registry);
         std::swap(m_index, old.m_index);
+        std::swap(m_registry, old.m_registry);
         return *this;
     }
 
@@ -335,9 +337,9 @@ class CCarList {
      */
     const char* RZ(void) const {
         if (!AtEnd())
-            return m_registry[m_index].rz;
+            return m_registry[m_index]->rz;
         return nullptr;
-    };
+    }
 
     /**
      * @brief Checks whether or not we are in the end of the list.
@@ -353,7 +355,7 @@ class CCarList {
 /** @brief Represents an iterator for owners in a car registry */
 class COwnerList {
    private:
-    MyVector<CarRecord> m_registry;
+    MyVector<CarRecord*> m_registry;
     int m_index;
 
     /**
@@ -362,19 +364,22 @@ class COwnerList {
      * @param _registry Registry to filter through
     * @param _rz License plate number to construct the COwnerList over
      */
-    void filterAndAdd(const MyVector<CarRecord>& _registry, const char* _rz) {
+    void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _rz) {
         for (int i = _registry.size() - 1; i > -1; i--) {
-            if (strcmp(_rz, _registry[i].rz) == 0) {
-                // TODO keep or remove previous owners?
-                m_registry.push_back(CarRecord(_registry[i]));
+            if (strcmp(_rz, _registry[i]->rz) == 0) {
+                m_registry.push_back(new CarRecord(*_registry[i]));
             }
         }
     }
 
    public:
-    COwnerList() = delete;
+    COwnerList() = default;
     /** @brief Destroys the COwnerList object. */
-    ~COwnerList() = default;
+    ~COwnerList() {
+        for (int i = 0; i < m_registry.size(); i++) {
+            delete m_registry[i];
+        }
+    }
 
     /**
     * @brief Construct a new COwnerList object.
@@ -383,7 +388,7 @@ class COwnerList {
     * @param _registry Registry to construst the COwnerList over
     * @param _rz License plate number to construct the COwnerList over
     */
-    COwnerList(const MyVector<CarRecord>& _registry, const char* _rz) : m_index(0) {
+    COwnerList(const MyVector<CarRecord*>& _registry, const char* _rz) : m_index(0) {
         filterAndAdd(_registry, _rz);
     }
 
@@ -394,13 +399,13 @@ class COwnerList {
      */
     COwnerList(const COwnerList& old) : m_index(old.m_index) {
         for (int i = 0; i < old.m_registry.size(); i++) {
-            m_registry.push_back(old.m_registry[i]);
+            m_registry.push_back(new CarRecord(*old.m_registry[i]));
         }
     }
 
     COwnerList& operator=(COwnerList old) {
-        std::swap(m_registry, old.m_registry);
         std::swap(m_index, old.m_index);
+        std::swap(m_registry, old.m_registry);
         return *this;
     }
     /**
@@ -409,7 +414,7 @@ class COwnerList {
      */
     const char* Name(void) const {
         if (!AtEnd())
-            return m_registry[m_index].name;
+            return m_registry[m_index]->name;
         return nullptr;
     }
     /**
@@ -418,7 +423,7 @@ class COwnerList {
      */
     const char* Surname(void) const {
         if (!AtEnd())
-            return m_registry[m_index].surname;
+            return m_registry[m_index]->surname;
         return nullptr;
     }
     /**
@@ -434,14 +439,20 @@ class COwnerList {
 /** @brief Represents a car registry */
 class CRegister {
    private:
-    MyVector<CarRecord> m_data;
+    MyVector<CarRecord*> m_data;
 
    public:
     CRegister() = default;
-    ~CRegister() = default;
+    ~CRegister() {
+        for (int i = 0; i < m_data.size(); i++) {
+            delete m_data[i];
+        }
+    }
 
     CRegister(const CRegister& old) {
-        m_data = old.m_data;
+        for (int i = 0; i < old.m_data.size(); i++) {
+            m_data.push_back(new CarRecord(*old.m_data[i]));
+        }
     }
 
     CRegister& operator=(CRegister old) {
@@ -458,9 +469,10 @@ class CRegister {
      * @return false When failed to add
      */
     bool AddCar(const char* rz, const char* name, const char* surname) {
+        // cout << "Adding a car..." << endl;
         // check if car with the same rz exists
         for (int i = 0; i < m_data.size(); i++) {
-            if (strcmp(rz, m_data[i].rz) == 0) {
+            if (strcmp(rz, m_data[i]->rz) == 0) {
                 // if it does exist, return false
                 return false;
             }
@@ -472,7 +484,7 @@ class CRegister {
         // m_data.print();
         // cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
 
-        m_data.push_back(CarRecord(rz, name, surname));
+        m_data.push_back(new CarRecord(rz, name, surname));
 
         // cout << "After adding:" << endl;
         // m_data.print();
@@ -488,17 +500,19 @@ class CRegister {
      * @return false When not found
      */
     bool DelCar(const char* rz) {
+        // cout << "Deleting a car..." << endl;
         bool deleted = false;
         // TODO unsure if this should be deleting just one record or all records with the matching rz
         // find the car with the same rz
         for (int i = 0; i < m_data.size(); i++) {
-            if (strcmp(rz, m_data[i].rz) == 0) {
+            if (strcmp(rz, m_data[i]->rz) == 0) {
                 // when found, remove it
                 // cout << "============================================================" << endl;
                 // cout << "Before delete:" << endl;
                 // m_data.print();
 
                 // cout << "=============== DELETING rz: '" << m_data[i].rz << "' ===============" << endl;
+                delete m_data[i];
                 m_data.erase(i);
 
                 // cout << "After delete:" << endl;
@@ -519,11 +533,12 @@ class CRegister {
      * @return int 
      */
     int CountCars(const char* name, const char* surname) const {
+        // cout << "Counting cars..." << endl;
         int count = 0;
 
         // Iterate over our container and increase count if the name and surname match.
         for (int i = 0; i < m_data.size(); i++) {
-            if (!m_data[i].IsArchived() && strcmp(name, m_data[i].name) == 0 && strcmp(surname, m_data[i].surname) == 0) {
+            if (!m_data[i]->IsArchived() && strcmp(name, m_data[i]->name) == 0 && strcmp(surname, m_data[i]->surname) == 0) {
                 count++;
             }
         }
@@ -541,20 +556,21 @@ class CRegister {
      * @return int Number of owners
      */
     int CountOwners(const char* RZ) const {
+        // cout << "Couting owners..." << endl;
         int count = 0;
         // Iterate over our container and increase count if the RZ.
         for (int i = 0; i < m_data.size(); i++) {
-            if (strcmp(RZ, m_data[i].rz) != 0)
+            if (strcmp(RZ, m_data[i]->rz) != 0)
                 continue;
 
             bool duplicate = false;
             // iterate over the previously checked names
             for (int j = 0; j < i; j++) {
-                if (strcmp(RZ, m_data[j].rz) != 0)
+                if (strcmp(RZ, m_data[j]->rz) != 0)
                     continue;
 
                 // if any match, it's a duplicate name
-                if (strcmp(m_data[i].name, m_data[j].name) == 0 && strcmp(m_data[i].surname, m_data[j].surname) == 0) {
+                if (strcmp(m_data[i]->name, m_data[j]->name) == 0 && strcmp(m_data[i]->surname, m_data[j]->surname) == 0) {
                     duplicate = true;
                     break;
                 }
@@ -580,14 +596,15 @@ class CRegister {
      * @return false When car doesn't exist or the current owner & the new owner are the same.
      */
     bool Transfer(const char* rz, const char* nName, const char* nSurname) {
+        // cout << "Transferring..." << endl;
         // find the car we are trying to transfer
         for (int i = 0; i < m_data.size(); i++) {
             // check if the car isn't archived and if RZ matches
-            if (!m_data[i].IsArchived() && strcmp(rz, m_data[i].rz) == 0) {
+            if (!m_data[i]->IsArchived() && strcmp(rz, m_data[i]->rz) == 0) {
                 // we found a car with a matching rz that isn't archived
 
                 // check if the owners are different
-                if (strcmp(nSurname, m_data[i].surname) == 0 && strcmp(nName, m_data[i].name) == 0) {
+                if (strcmp(nSurname, m_data[i]->surname) == 0 && strcmp(nName, m_data[i]->name) == 0) {
                     // owners are the same
                     return false;
                 }
@@ -595,10 +612,10 @@ class CRegister {
                 // cout << "Before transfer:" << endl;
                 // m_data.print();
 
-                // cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
+                // cout << "=============== TRANSFERRING [" << m_data[i]->rz << "] " << m_data[i]->name << " " << m_data[i]->surname << " -> " << nName << " " << nSurname << " ===============" << endl;
 
-                m_data[i].Archive();
-                m_data.push_back(CarRecord(rz, nName, nSurname));
+                m_data[i]->Archive();
+                m_data.push_back(new CarRecord(rz, nName, nSurname));
 
                 // cout << "After transfer:" << endl;
                 // m_data.print();
@@ -620,6 +637,7 @@ class CRegister {
      * @return CCarList Object to iterate over
      */
     CCarList ListCars(const char* name, const char* surname) const {
+        // cout << "Listing cars..." << endl;
         // m_data.print();
         return CCarList(m_data, name, surname);
     }
@@ -632,11 +650,15 @@ class CRegister {
      * @return COwnerList Object to iterate over
      */
     COwnerList ListOwners(const char* RZ) const {
+        // cout << "Listing owners..." << endl;
         // m_data.print();
         return COwnerList(m_data, RZ);
     }
-};
 
+    void Print() {
+        m_data.print();
+    }
+};
 #ifndef __PROGTEST__
 static bool
 matchList(CCarList&& l,
