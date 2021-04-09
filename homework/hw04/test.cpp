@@ -39,21 +39,22 @@ class MyVector {
     /** @brief Increases (2x) the capacity of our container. */
     void increase_capacity() {
         // Initialize the new capactity
-        int new_max_capacity = 2 * (this->m_max_capacity);
-        if (new_max_capacity == 0) new_max_capacity = 1;  // TODO Increase for better performance
+        int new_max_capacity = 2 * (m_max_capacity);
+        if (new_max_capacity == 0) new_max_capacity = 10;
 
         // Initialize a new buffer and allocate memory
         T* new_buffer = new T[new_max_capacity];
 
         // Copy the contents in the current buffer to the new one
-        for (int i = 0; i < this->m_size; ++i) {
-            new_buffer[i] = (this->m_buffer)[i];
+        for (int i = 0; i < m_size; ++i) {
+            new_buffer[i] = (m_buffer)[i];
         }
 
         // Delete the old buffer & assign to member variables
-        delete[](this->m_buffer);
-        this->m_buffer = new_buffer;
-        this->m_max_capacity = new_max_capacity;
+        if (m_buffer != nullptr)
+            delete[](m_buffer);
+        m_buffer = new_buffer;
+        m_max_capacity = new_max_capacity;
     }
 
    public:
@@ -102,6 +103,10 @@ class MyVector {
      * @return T& 
      */
     T& operator[](int index) {
+        if (index >= m_size) {
+            throw std::out_of_range("index is greater or equal to the container's size!");
+            exit(0);
+        }
         return m_buffer[index];
     };
 
@@ -112,6 +117,10 @@ class MyVector {
      * @return T& 
      */
     const T& operator[](int index) const {
+        if (index >= m_size) {
+            throw std::out_of_range("index is greater or equal to the container's size!");
+            exit(0);
+        }
         return m_buffer[index];
     };
 
@@ -171,8 +180,8 @@ class MyVector {
     }
 
     void erase(const int position) {
-        m_size--;
         // fill the "deleted" position
+        m_size--;
         for (int i = (int)position; i < m_size; i++) {
             m_buffer[i] = m_buffer[i + 1];
         }
@@ -459,6 +468,8 @@ class CRegister {
      * @return false When not found
      */
     bool DelCar(const char* rz) {
+        bool deleted = false;
+        // TODO unsure if this should be deleting just one record or all records with the matching rz
         // find the car with the same rz
         for (int i = 0; i < m_data.size(); i++) {
             if (strcmp(rz, m_data[i].rz) == 0) {
@@ -474,10 +485,10 @@ class CRegister {
                 // m_data.print();
                 // cout << "============================================================" << endl;
 
-                return true;
+                deleted = true;
             }
         }
-        return false;
+        return deleted;
     }
 
     /**
@@ -677,6 +688,20 @@ int main(void) {
     b3.Transfer("ABC-12-34", "John", "Smith");
     b3.Transfer("ABC-12-34", "Jeremy", "Black");
     assert(b3.CountOwners("ABC-12-34") == 2);
+
+    CRegister b4 = b3;
+    b4.AddCar("ABC-12-34", "John", "Smith");
+    b4.AddCar("ABC-32-22", "John", "Hacker");
+    b4.AddCar("XYZ-11-22", "Peter", "Smith");
+    b4.AddCar("XYZ-11-22", "Jane", "Black");
+    b4.AddCar("XYZ-11-22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXXXYZ-11-22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX", "XYZ-11-22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX", "XYZ-11-22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX22XXXXX");
+    b4.AddCar("", "", "");
+    b4.DelCar("AAA-11-11");
+    b4.DelCar("XYZ-11-22");
+    b4.Transfer("BBB-99-99", "John", "Smith");
+    b4.Transfer("ABC-12-34", "John", "Smith");
+    b4.Transfer("XYZ-11-22", "John", "Smith");
+    b4.CountCars("George", "White");
     return 0;
 }
 #endif /* __PROGTEST__ */
