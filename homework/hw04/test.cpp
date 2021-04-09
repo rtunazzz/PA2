@@ -344,6 +344,7 @@ class COwnerList {
     void filterAndAdd(const MyVector<Car>& _registry, const char* _rz) {
         for (int i = _registry.size() - 1; i > -1; i--) {
             if (strcmp(_rz, _registry[i].rz) == 0) {
+                // TODO keep or remove previous owners?
                 m_registry.push_back(Car(_registry[i]));
             }
         }
@@ -562,8 +563,10 @@ class CRegister {
     bool Transfer(const char* rz, const char* nName, const char* nSurname) {
         // find the car we are trying to transfer
         for (int i = 0; i < m_data.size(); i++) {
-            if (strcmp(rz, m_data[i].rz) == 0) {
-                // we found a car with a matching rz
+            // check if the car isn't archived and if RZ matches
+            if (!m_data[i].isArchived() && strcmp(rz, m_data[i].rz) == 0) {
+                // we found a car with a matching rz that isn't archived
+
                 // check if the owners are different
                 if (strcmp(nSurname, m_data[i].surname) == 0 && strcmp(nName, m_data[i].name) == 0) {
                     // owners are the same
