@@ -187,19 +187,23 @@ class MyVector {
     }
 };
 
+/** @brief Represents a Car record in a car registry */
 class CarRecord {
+   private:
+    /** @brief Whether or not is the card record archived */
+    bool m_archived;
+
    public:
+    // TODO make these private & add getters and setters
     /** @brief License Plate number of the car */
     char* rz;
     /** @brief Name of the car's owner */
     char* name;
     /** @brief Surname of the car's owner */
     char* surname;
-    /** @brief Whether or not is the card record archived */
-    bool m_archived;
 
     /** @brief Construct a new CarRecord object without any parameters */
-    CarRecord() : rz(nullptr), name(nullptr), surname(nullptr), m_archived(false) {}
+    CarRecord() : m_archived(false), rz(nullptr), name(nullptr), surname(nullptr) {}
 
     /**
      * @brief Construct a new CarRecord object with the parameters specified
@@ -229,7 +233,7 @@ class CarRecord {
      * @brief Construct a new Car Record object from the old car provided
      * @param old CarRecord to copy
      */
-    CarRecord(const CarRecord& old) : m_archived(old.m_archived) {
+    CarRecord(const CarRecord& old) : m_archived(old.IsArchived()) {
         rz = new char[strlen(old.rz) + 1];
         strcpy(rz, old.rz);
 
@@ -244,12 +248,13 @@ class CarRecord {
         std::swap(rz, old.rz);
         std::swap(name, old.name);
         std::swap(surname, old.surname);
-        std::swap(m_archived, old.m_archived);
+
+        m_archived = old.IsArchived();
         return *this;
     }
 
     /** @brief Archives the CarRecord */
-    void archive() {
+    void Archive() {
         m_archived = true;
     }
 
@@ -258,17 +263,18 @@ class CarRecord {
      * @return true When it is archived
      * @return false When it isn't archived
      */
-    bool isArchived() const {
+    bool IsArchived() const {
         return m_archived;
     }
 
     friend ostream& operator<<(ostream& os, const CarRecord& c) {
-        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << " (archived: " << (c.isArchived() ? "true" : "false")
+        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << " (archived: " << (c.IsArchived() ? "true" : "false")
            << ")";
         return os;
     }
 };
 
+/** @brief Represents an iterator for cars in a car registry */
 class CCarList {
    private:
     MyVector<CarRecord> m_registry;
@@ -283,7 +289,7 @@ class CCarList {
      */
     void filterAndAdd(const MyVector<CarRecord>& _registry, const char* _name, const char* _surname) {
         for (int i = _registry.size() - 1; i > -1; i--) {
-            if (!_registry[i].isArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
+            if (!_registry[i].IsArchived() && strcmp(_name, _registry[i].name) == 0 && strcmp(_surname, _registry[i].surname) == 0) {
                 m_registry.push_back(CarRecord(_registry[i]));
             }
         }
@@ -343,6 +349,7 @@ class CCarList {
     void Next(void) { m_index++; }
 };
 
+/** @brief Represents an iterator for owners in a car registry */
 class COwnerList {
    private:
     MyVector<CarRecord> m_registry;
@@ -422,6 +429,7 @@ class COwnerList {
     void Next(void) { m_index++; }
 };
 
+/** @brief Represents a car registry */
 class CRegister {
    private:
     MyVector<CarRecord> m_data;
@@ -447,9 +455,7 @@ class CRegister {
      * @return true When added successfully
      * @return false When failed to add
      */
-    bool AddCar(const char* rz,
-                const char* name,
-                const char* surname) {
+    bool AddCar(const char* rz, const char* name, const char* surname) {
         // check if car with the same rz exists
         for (int i = 0; i < m_data.size(); i++) {
             if (strcmp(rz, m_data[i].rz) == 0) {
@@ -515,7 +521,7 @@ class CRegister {
 
         // Iterate over our container and increase count if the name and surname match.
         for (int i = 0; i < m_data.size(); i++) {
-            if (!m_data[i].isArchived() && strcmp(name, m_data[i].name) == 0 && strcmp(surname, m_data[i].surname) == 0) {
+            if (!m_data[i].IsArchived() && strcmp(name, m_data[i].name) == 0 && strcmp(surname, m_data[i].surname) == 0) {
                 count++;
             }
         }
@@ -575,7 +581,7 @@ class CRegister {
         // find the car we are trying to transfer
         for (int i = 0; i < m_data.size(); i++) {
             // check if the car isn't archived and if RZ matches
-            if (!m_data[i].isArchived() && strcmp(rz, m_data[i].rz) == 0) {
+            if (!m_data[i].IsArchived() && strcmp(rz, m_data[i].rz) == 0) {
                 // we found a car with a matching rz that isn't archived
 
                 // check if the owners are different
@@ -589,7 +595,7 @@ class CRegister {
 
                 // cout << "=============== TRANSFERRING rz: '" << m_data[i].rz << "' ===============" << endl;
 
-                m_data[i].archive();
+                m_data[i].Archive();
                 m_data.push_back(CarRecord(rz, nName, nSurname));
 
                 // cout << "After transfer:" << endl;
@@ -604,8 +610,9 @@ class CRegister {
     }
 
     /**
-     * @brief Searches through our data and returns an object
-     * which can be used to iterate over the found records.
+     * @brief Searches through the registry and returns an object
+     * which can be used to list all cars a person specified by the name
+     * and surname owns.
      * @param _name Name to list
      * @param _surname Surname to list
      * @return CCarList Object to iterate over
@@ -615,6 +622,13 @@ class CRegister {
         return CCarList(m_data, name, surname);
     }
 
+    /**
+     * @brief Searches through the registry and returns an object
+     * which can be used to list all owners of the RZ specified..
+     * @param _name Name to list
+     * @param _surname Surname to list
+     * @return COwnerList Object to iterate over
+     */
     COwnerList ListOwners(const char* RZ) const {
         // m_data.print();
         return COwnerList(m_data, RZ);
