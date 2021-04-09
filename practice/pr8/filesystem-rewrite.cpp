@@ -21,6 +21,9 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
+/**
+ * @brief Represents an entity in a file system
+ */
 class CEntity {
    public:
     /** @brief Name of the entity */
@@ -222,8 +225,7 @@ class CDirectory : public CEntity {
         } else {
             auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, shared_ptr<CEntity>>& p) { return p.first == filename; });
             if (it != data.end()) {
-                // delete the file from the map
-                // delete it->second;
+                // remove the file from the map
                 data.erase(it);
                 return *this;
             }
@@ -247,7 +249,6 @@ class CDirectory : public CEntity {
             data.insert(make_pair(filename, newEntity));
         } else {
             // Otherwise just change the pointer to the new file
-            // delete it->second;
             it->second = newEntity;
         }
         return *this;
@@ -316,12 +317,6 @@ class CDirectory : public CEntity {
 };
 
 #ifndef __PROGTEST__
-
-// int main() {
-//     CFile f = CFile("hash", 10);
-//     cout << "File named: " << f.m_Hash << " with a size: " << f.Size() << endl;
-//     return 0;
-// }
 
 int main() {
     CDirectory root;
