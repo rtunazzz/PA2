@@ -1,0 +1,73 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "homework"
+		},
+		{
+			"path": "practice"
+		},
+		{
+			"path": "semestral"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"string": "cpp",
+			"iosfwd": "cpp",
+			"*.tcc": "cpp",
+			"unordered_map": "cpp",
+			"vector": "cpp",
+			"functional": "cpp",
+			"memory": "cpp",
+			"optional": "cpp",
+			"string_view": "cpp",
+			"system_error": "cpp",
+			"array": "cpp",
+			"deque": "cpp",
+			"list": "cpp",
+			"initializer_list": "cpp",
+			"ranges": "cpp",
+			"ostream": "cpp",
+			"typeinfo": "cpp",
+			"algorithm": "cpp",
+			"sstream": "cpp",
+			"tuple": "cpp",
+			"atomic": "cpp",
+			"bit": "cpp",
+			"cctype": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"compare": "cpp",
+			"complex": "cpp",
+			"concepts": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"map": "cpp",
+			"set": "cpp",
+			"exception": "cpp",
+			"iterator": "cpp",
+			"memory_resource": "cpp",
+			"numeric": "cpp",
+			"random": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"iomanip": "cpp",
+			"iostream": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"new": "cpp",
+			"stdexcept": "cpp",
+			"streambuf": "cpp"
+		}
+	}
+}
