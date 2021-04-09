@@ -1,4 +1,3 @@
-
 #ifndef __PROGTEST__
 #include <algorithm>
 #include <cassert>
@@ -26,7 +25,6 @@ class CEntity {
    public:
     /** @brief Name of the entity */
     string m_Name;
-    int m_RefCount;
     // not needed since we hold names in the folder map anyway but this way
     // I can overload the << operators on the class' children
 
@@ -53,16 +51,6 @@ class CFile : public CEntity {
      */
     CFile(const string hash, int filesize) : m_Hash(hash), m_Filesize(filesize) {
         m_Name = "";
-        m_RefCount = 1;
-    }
-
-    CFile(const CFile& f) : m_Hash(f.m_Hash), m_Filesize(f.m_Filesize) {
-        m_Name = f.m_Name;
-        m_RefCount++;
-    }
-
-    ~CFile() {
-        --m_RefCount;
     }
 
     /**
@@ -82,14 +70,6 @@ class CFile : public CEntity {
     CFile& Change(const string hash, int filesize) {
         m_Hash = hash;
         m_Filesize = filesize;
-        return *this;
-    }
-
-    CFile& operator=(CFile tmp) {  // copy & swap
-        std::swap(tmp.m_Name, m_Name);
-        std::swap(tmp.m_RefCount, m_RefCount);
-        std::swap(tmp.m_Hash, m_Hash);
-        std::swap(tmp.m_Filesize, m_Filesize);
         return *this;
     }
 
@@ -119,16 +99,6 @@ class CLink : public CEntity {
      */
     CLink(const string path) : m_Path(path) {
         m_Name = "";
-        m_RefCount = 1;
-    }
-
-    CLink(const CLink& l) : m_Path(l.m_Path) {
-        m_Name = l.m_Name;
-        m_RefCount++;
-    }
-
-    ~CLink() {
-        --m_RefCount;
     }
 
     /**
@@ -149,13 +119,6 @@ class CLink : public CEntity {
         return *this;
     }
 
-    CLink& operator=(CLink tmp) {  // copy & swap
-        std::swap(tmp.m_Name, m_Name);
-        std::swap(tmp.m_RefCount, m_RefCount);
-        std::swap(tmp.m_Path, m_Path);
-        return *this;
-    }
-
     /**
      * @brief Sends link's string representation to the stream specified
      * @param os stream to send the string to
@@ -172,27 +135,32 @@ class CLink : public CEntity {
  * @brief Represents a directory.
  */
 class CDirectory : public CEntity {
-   private:
+   public:
     /** @brief Holds data about our entities */
     map<string, CEntity*> data;
 
-   public:
-    CDirectory() {
-        m_Name = "";
-        m_RefCount = 1;
-    }
+    CDirectory(const CDirectory& dir) : data(dir.data) {
+        auto oldData = dir.data;
 
-    ~CDirectory() {
-        for (auto const& it : data) {
-            if (--(it.second->m_RefCount) == 0) {
-                delete it.second;
-            }
+        for (auto it : dir.data) {
+            const CFile* f = dynamic_cast<const CFile*>(it.second);
+            if (f) data.insert(make_pair(it.first, new CFile(*f)));
+
+            const CLink* l = dynamic_cast<const CLink*>(it.second);
+            if (l) data.insert(make_pair(it.first, new CLink(*l)));
+
+            const CDirectory* d = dynamic_cast<const CDirectory*>(it.second);
+            if (d) data.insert(make_pair(it.first, new CDirectory(*d)));
         }
     }
 
-    CDirectory(const CDirectory& dir) : data(dir.data) {
-        for (auto const& it : data) {
-            (it.second->m_RefCount)++;
+    CDirectory() {
+        m_Name = "";
+    }
+
+    ~CDirectory() {
+        for (auto it : data) {
+            delete it.second;
         }
     }
 
@@ -205,7 +173,7 @@ class CDirectory : public CEntity {
         int tmpSize = 0;
 
         // Iterate over all the files
-        for (auto const& it : data) {
+        for (auto it : data) {
             tmpSize += it.second->Size() + it.first.size();
         }
 
@@ -225,12 +193,12 @@ class CDirectory : public CEntity {
             auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
             if (it != data.end()) {
                 // delete the file from the map
-                if (--(it->second->m_RefCount) == 0) {
-                    delete it->second;
-                }
+                // delete it->second;
                 data.erase(it);
+                return *this;
             }
         }
+
         return *this;
     }
 
@@ -256,9 +224,7 @@ class CDirectory : public CEntity {
                 data.insert(p);
             } else {
                 // Otherwise just change the pointer to the new file
-                if (--(it->second->m_RefCount) == 0) {
-                    delete it->second;
-                }
+                delete it->second;
                 it->second = newFile;
             }
             return *this;
@@ -275,9 +241,7 @@ class CDirectory : public CEntity {
                 data.insert(p);
             } else {
                 // Otherwise just change the pointer to the new link
-                if (--(it->second->m_RefCount) == 0) {
-                    delete it->second;
-                }
+                delete it->second;
                 it->second = newLink;
             }
             return *this;
@@ -294,9 +258,7 @@ class CDirectory : public CEntity {
                 data.insert(p);
             } else {
                 // Otherwise just change the pointer to the new directory
-                if (--(it->second->m_RefCount) == 0) {
-                    delete it->second;
-                }
+                delete it->second;
                 it->second = newDir;
             }
             return *this;
@@ -316,7 +278,6 @@ class CDirectory : public CEntity {
         // Search files
         auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
         if (it != data.end()) {
-            (it->second->m_RefCount)++;
             return *(it->second);
         }
 
@@ -333,18 +294,10 @@ class CDirectory : public CEntity {
         // Search files
         auto it = find_if(data.cbegin(), data.cend(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
         if (it != data.cend()) {
-            (it->second->m_RefCount)++;
             return *(it->second);
         }
 
         throw std::out_of_range("Resource not found.");
-    }
-
-    CDirectory& operator=(CDirectory tmp) {  // copy & swap
-        std::swap(tmp.m_Name, m_Name);
-        std::swap(tmp.m_RefCount, m_RefCount);
-        std::swap(tmp.data, data);
-        return *this;
     }
 
     /**
@@ -354,7 +307,7 @@ class CDirectory : public CEntity {
      * @return ostream& 
      */
     friend ostream& operator<<(ostream& os, const CDirectory& dir) {
-        for (auto const& it : dir.data) {
+        for (auto it : dir.data) {
             const CFile* f = dynamic_cast<const CFile*>(it.second);
             const CLink* l = dynamic_cast<const CLink*>(it.second);
             const CDirectory* d = dynamic_cast<const CDirectory*>(it.second);
@@ -370,6 +323,12 @@ class CDirectory : public CEntity {
         }
 
         return os;
+    }
+
+    CDirectory& operator=(CDirectory tmp) {  // copy & swap
+        std::swap(tmp.m_Name, m_Name);
+        std::swap(tmp.data, data);
+        return *this;
     }
 };
 
@@ -460,9 +419,6 @@ int main() {
     CDirectory root2 = root;
     root2.Change("TestFile.txt", CFile("yesyes=", 123));
     root2.Change("TestFile.ln", CLink("test/path"));
-    const CLink& refLink = dynamic_cast<const CLink&>(root2.Get("TestFile.ln"));
-    cout << refLink << endl;
-
     root.Change("file.txt");
 
     cout << "================== [DIRECTORY] ROOT1: ==================" << endl;
