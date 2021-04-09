@@ -28,9 +28,15 @@ class CEntity {
     // not needed since we hold names in the folder map anyway but this way
     // I can overload the << operators on the class' children
 
-    virtual ~CEntity() {}
+    virtual ~CEntity() = default;
     virtual int Size() const { return -1; }
-    friend ostream& operator<<(ostream& os, const CEntity& e) { return os; }
+    virtual CEntity* Clone() const {
+        return new CEntity(*this);
+    }
+    virtual ostream& Print(ostream& os) const {
+        return os << m_Name;
+    }
+    friend ostream& operator<<(ostream& os, const CEntity& e) { return e.Print(os); }
 };
 
 /**
@@ -49,15 +55,17 @@ class CFile : public CEntity {
      * @param hash Hash of the file's data
      * @param filesize Size of the file
      */
-    CFile(const string hash, int filesize) : m_Hash(hash), m_Filesize(filesize) {
-        m_Name = "";
+    CFile(const string hash, int filesize) : CEntity(), m_Hash(hash), m_Filesize(filesize) {}
+
+    CEntity* Clone() const override {
+        return new CFile(*this);
     }
 
     /**
      * @brief Returns the current size of the file.
      * @return int Size of the file
      */
-    int Size() const {
+    int Size() const override {
         return m_Filesize;
     }
 
@@ -73,6 +81,10 @@ class CFile : public CEntity {
         return *this;
     }
 
+    ostream& Print(ostream& os) const override {
+        return os << Size() << "\t" << m_Name << " " << m_Hash;
+    }
+
     /**
      * @brief Sends file's string representation to the stream specified
      * @param os stream to send the string to
@@ -80,8 +92,7 @@ class CFile : public CEntity {
      * @return ostream& 
      */
     friend ostream& operator<<(ostream& os, const CFile& file) {
-        os << file.Size() << "\t" << file.m_Name << " " << file.m_Hash;
-        return os;
+        return file.Print(os);
     }
 };
 
@@ -97,15 +108,17 @@ class CLink : public CEntity {
      * @brief Construct a new CLink object
      * @param path Path of the link
      */
-    CLink(const string path) : m_Path(path) {
-        m_Name = "";
+    CLink(const string path) : CEntity(), m_Path(path) {}
+
+    CEntity* Clone() const override {
+        return new CLink(*this);
     }
 
     /**
      * @brief Returns the size of the link
      * @return int 
      */
-    int Size() const {
+    int Size() const override {
         return m_Path.size() + 1;
     }
 
@@ -119,6 +132,10 @@ class CLink : public CEntity {
         return *this;
     }
 
+    ostream& Print(ostream& os) const override {
+        return os << Size() << "\t" << m_Name << " -> " << m_Path;
+    }
+
     /**
      * @brief Sends link's string representation to the stream specified
      * @param os stream to send the string to
@@ -126,8 +143,7 @@ class CLink : public CEntity {
      * @return ostream& 
      */
     friend ostream& operator<<(ostream& os, const CLink& link) {
-        os << link.Size() << "\t" << link.m_Name << " -> " << link.m_Path;
-        return os;
+        return link.Print(os);
     }
 };
 
@@ -139,29 +155,10 @@ class CDirectory : public CEntity {
     /** @brief Holds data about our entities */
     map<string, CEntity*> data;
 
-    CDirectory(const CDirectory& dir) : data(dir.data) {
-        auto oldData = dir.data;
+    CDirectory() : CEntity() {}
 
-        for (auto it : dir.data) {
-            const CFile* f = dynamic_cast<const CFile*>(it.second);
-            if (f) data.insert(make_pair(it.first, new CFile(*f)));
-
-            const CLink* l = dynamic_cast<const CLink*>(it.second);
-            if (l) data.insert(make_pair(it.first, new CLink(*l)));
-
-            const CDirectory* d = dynamic_cast<const CDirectory*>(it.second);
-            if (d) data.insert(make_pair(it.first, new CDirectory(*d)));
-        }
-    }
-
-    CDirectory() {
-        m_Name = "";
-    }
-
-    ~CDirectory() {
-        for (auto it : data) {
-            delete it.second;
-        }
+    CEntity* Clone() const override {
+        return new CDirectory(*this);
     }
 
     /**
@@ -169,7 +166,7 @@ class CDirectory : public CEntity {
      * Size of the directory is equal to number of files (including directories) and the number of characters in their name.
      * @return int Size of the directory
      */
-    int Size() const {
+    int Size() const override {
         int tmpSize = 0;
 
         // Iterate over all the files
@@ -208,62 +205,19 @@ class CDirectory : public CEntity {
      * @param entity const reference to the entity to add/ replace
      */
     CDirectory& Change(string filename, const CEntity& entity) {
-        const CFile* f = dynamic_cast<const CFile*>(&entity);
-        const CLink* l = dynamic_cast<const CLink*>(&entity);
-        const CDirectory* d = dynamic_cast<const CDirectory*>(&entity);
-
         auto it = find_if(data.begin(), data.end(), [&filename](const pair<string, CEntity*>& p) { return p.first == filename; });
 
-        if (f) {
-            // It's a file
-            CFile* newFile = new CFile(*f);  // TODO handle deleting
-            newFile->m_Name = filename;
-            if (it == data.end()) {
-                // Insert the new file
-                auto p = make_pair(filename, newFile);
-                data.insert(p);
-            } else {
-                // Otherwise just change the pointer to the new file
-                // delete it->second;
-                it->second = newFile;
-            }
-            return *this;
+        CEntity* newEntity = it->second->Clone();  // TODO handle deleting
+        newEntity->m_Name = filename;
+        if (it == data.end()) {
+            // Insert the new file
+            auto p = make_pair(filename, newEntity);
+            data.insert(p);
+        } else {
+            // Otherwise just change the pointer to the new file
+            // delete it->second;
+            it->second = newEntity;
         }
-
-        if (l) {
-            // It's a link
-            CLink* newLink = new CLink(*l);  // TODO handle deleting
-            newLink->m_Name = filename;
-
-            if (it == data.end()) {
-                // Insert the new link
-                auto p = make_pair(filename, newLink);
-                data.insert(p);
-            } else {
-                // Otherwise just change the pointer to the new link
-                // delete it->second;
-                it->second = newLink;
-            }
-            return *this;
-        }
-
-        if (d) {
-            // It's a directory
-            CDirectory* newDir = new CDirectory(*d);  // TODO handle deleting
-            newDir->m_Name = filename;
-
-            if (it == data.end()) {
-                // Insert the new directory
-                auto p = make_pair(filename, newDir);
-                data.insert(p);
-            } else {
-                // Otherwise just change the pointer to the new directory
-                // delete it->second;
-                it->second = newDir;
-            }
-            return *this;
-        }
-
         return *this;
     }
 
@@ -300,6 +254,10 @@ class CDirectory : public CEntity {
         throw std::out_of_range("Resource not found.");
     }
 
+    ostream& Print(ostream& os) const override {
+        return os << Size() << "\t" << m_Name << "/" << endl;
+    }
+
     /**
      * @brief Sends directory's string representation to the stream specified
      * @param os stream to send the string to
@@ -308,20 +266,8 @@ class CDirectory : public CEntity {
      */
     friend ostream& operator<<(ostream& os, const CDirectory& dir) {
         for (auto it : dir.data) {
-            const CFile* f = dynamic_cast<const CFile*>(it.second);
-            const CLink* l = dynamic_cast<const CLink*>(it.second);
-            const CDirectory* d = dynamic_cast<const CDirectory*>(it.second);
-            if (f) {
-                os << *f << endl;
-            }
-            if (l) {
-                os << *l << endl;
-            }
-            if (d) {
-                os << d->Size() << "\t" << d->m_Name << "/" << endl;
-            }
+            it.second->Print(os);
         }
-
         return os;
     }
 
