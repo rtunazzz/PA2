@@ -19,22 +19,22 @@ class MyVector {
     T* m_buffer;
 
     /** @brief Maximum capacity of our buffer (pointer array) */
-    int m_max_capacity;
+    size_t m_max_capacity;
 
     /** @brief Size of our buffer (pointer array) */
-    int m_size;
+    size_t m_size;
 
     /** @brief Increases (2x) the capacity of our container. */
     void increase_capacity() {
         // Initialize the new capactity
-        int new_max_capacity = 2 * m_max_capacity;
+        size_t new_max_capacity = 2 * m_max_capacity;
         if (new_max_capacity == 0) new_max_capacity = 10;
 
         // Initialize a new buffer and allocate memory
         T* new_buffer = new T[new_max_capacity];
 
         // Copy the contents in the current buffer to the new one
-        for (int i = 0; i < m_size; ++i) {
+        for (size_t i = 0; i < m_size; ++i) {
             new_buffer[i] = m_buffer[i];
         }
 
@@ -60,7 +60,7 @@ class MyVector {
      */
     MyVector(const MyVector<T>& old) : m_buffer(new T[old.m_max_capacity]), m_max_capacity(old.m_max_capacity), m_size(old.m_size) {
         // copy contents of the old buffer to the new one
-        for (int i = 0; i < old.m_size; ++i) {
+        for (size_t i = 0; i < old.m_size; ++i) {
             m_buffer[i] = old.m_buffer[i];
         }
     }
@@ -93,7 +93,7 @@ class MyVector {
      * @param index 
      * @return T& 
      */
-    T& operator[](int index) {
+    T& operator[](size_t index) {
         if (index >= m_size) {
             throw std::out_of_range("index is greater or equal to the container's size!");
             exit(0);
@@ -107,7 +107,7 @@ class MyVector {
      * @param index 
      * @return T& 
      */
-    const T& operator[](int index) const {
+    const T& operator[](size_t index) const {
         if (index >= m_size) {
             throw std::out_of_range("index is greater or equal to the container's size!");
             exit(0);
@@ -155,30 +155,30 @@ class MyVector {
      * @param position index of where the element should be placed
      * @param var value which is to be placed at the possition passed in
      */
-    void insert(const int position, const T& var) {
+    void insert(const size_t position, const T& var) {
         // increase capacity if needed
         if (m_size >= m_max_capacity) {
             increase_capacity();
         }
         // move elements starting from the position passed in one index further,
         // which leaves the position index empty
-        for (int i = (int)m_size; i > position; --i) {
+        for (size_t i = m_size; i > position; --i) {
             m_buffer[i] = m_buffer[i - 1];
         }
         m_buffer[position] = var;
         m_size += 1;
     }
 
-    void erase(const int position) {
+    void erase(const size_t position) {
         // fill the "deleted" position
         m_size -= 1;
-        for (int i = (int)position; i < m_size; i++) {
+        for (size_t i = position; i < m_size; i++) {
             m_buffer[i] = m_buffer[i + 1];
         }
     }
 
     /** @brief Utility method to print the vector on the standard output. */
-    void print() const {
+    void prsize_t() const {
         std::cout << "[ " << endl;
         for (int i = 0; i < m_size; ++i) {
             std::cout << "\t" << m_buffer[i] << std::endl;
