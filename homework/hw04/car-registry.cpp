@@ -39,20 +39,21 @@ class MyVector {
     /** @brief Increases (2x) the capacity of our container. */
     void increase_capacity() {
         // Initialize the new capactity
-        int new_max_capacity = 2 * (m_max_capacity);
-        if (new_max_capacity == 0) new_max_capacity = 10;
+        int new_max_capacity = 2 * m_max_capacity;
+        if (new_max_capacity == 0) new_max_capacity = 1;  // TODO increase for better performance
 
         // Initialize a new buffer and allocate memory
         T* new_buffer = new T[new_max_capacity];
 
         // Copy the contents in the current buffer to the new one
         for (int i = 0; i < m_size; ++i) {
-            new_buffer[i] = (m_buffer)[i];
+            new_buffer[i] = m_buffer[i];
         }
 
         // Delete the old buffer & assign to member variables
         if (m_buffer != nullptr)
             delete[](m_buffer);
+
         m_buffer = new_buffer;
         m_max_capacity = new_max_capacity;
     }
@@ -69,7 +70,7 @@ class MyVector {
      * @brief Copies a My Vector object
      * @param old source to be copied form
      */
-    MyVector(const MyVector<T>& old) : m_buffer(new T[old.m_size]), m_max_capacity(old.m_size), m_size(old.m_size) {
+    MyVector(const MyVector<T>& old) : m_buffer(new T[old.m_max_capacity]), m_max_capacity(old.m_max_capacity), m_size(old.m_size) {
         // copy contents of the old buffer to the new one
         for (int i = 0; i < old.m_size; ++i) {
             m_buffer[i] = old.m_buffer[i];
@@ -92,7 +93,7 @@ class MyVector {
      * @return MyVector<T>&
      */
     MyVector<T>& operator=(MyVector<T> old) {
-        swap(old);
+        MyVector::swap(old);
         return *this;
     }
 
@@ -129,23 +130,22 @@ class MyVector {
      * @brief Adds a value to our container.
      * @param var Variable to be added
      */
-    void push_back(const T& var) {
+    MyVector& push_back(const T& var) {
         // if we're at max capacity, increase it
         if (m_size >= m_max_capacity) {
             increase_capacity();
         }
         // and add the variable to the buffer
         m_buffer[m_size] = var;
-        m_size++;
+        m_size += 1;
+        return *this;
     }
 
-    /**
-     * @brief Removes and returns the last element from the container.
-     * !!! This method is different than the default implementation of the std::vector::pop_back method.
-     */
-    T pop_back() {
-        T& to_return = m_buffer[--m_size];
-        return to_return;
+    /** @brief Removes and the last element from our container.*/
+    void pop_back() {
+        if (m_size > 0) {
+            m_size -= 1;
+        }
     }
 
     /**
@@ -176,12 +176,12 @@ class MyVector {
             m_buffer[i] = m_buffer[i - 1];
         }
         m_buffer[position] = var;
-        m_size++;
+        m_size += 1;
     }
 
     void erase(const int position) {
         // fill the "deleted" position
-        m_size--;
+        m_size -= 1;
         for (int i = (int)position; i < m_size; i++) {
             m_buffer[i] = m_buffer[i + 1];
         }
@@ -418,9 +418,7 @@ class CRegister {
     ~CRegister() = default;
 
     CRegister(const CRegister& old) {
-        for (int i = 0; i < old.m_data.size(); i++) {
-            m_data.push_back(old.m_data[i]);
-        }
+        m_data = old.m_data;
     }
 
     CRegister& operator=(CRegister old) {
