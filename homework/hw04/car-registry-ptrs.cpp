@@ -473,24 +473,60 @@ class COwnerList : public CRegistryIterator {
 /** @brief Represents a car registry */
 class CRegister {
    private:
-    MyVector<CarRecord*> m_data;
+    struct RegisterCounter {
+        MyVector<CarRecord*> m_data;
+        int ref_count = 0;
+    };
+    RegisterCounter* m_counter;
 
-   public:
-    CRegister() = default;
-    ~CRegister() {
-        for (size_t i = 0; i < m_data.Size(); i += 1) {
-            delete m_data[i];
+    /** @brief Creates a deep copy of the current RegisterCounter */
+    void _make_deep_copy() {
+        // save the pointer to the old counter
+        RegisterCounter* old_counter = m_counter;
+        // decrease reference on the old counter since we created
+        // the copy which no longer references the previous contents
+        old_counter->ref_count -= 1;
+
+        // create a new one
+        m_counter = new RegisterCounter();
+        m_counter->ref_count = 1;
+
+        // create a deep copy of the old_counter contents
+        for (size_t i = 0; i < old_counter->m_data.Size(); i += 1) {
+            m_counter->m_data.Push_back(new CarRecord(*old_counter->m_data[i]));
         }
     }
 
-    CRegister(const CRegister& old) {
-        for (size_t i = 0; i < old.m_data.Size(); i += 1) {
-            m_data.Push_back(new CarRecord(*old.m_data[i]));
+   public:
+    /** @brief Construct a new CRegister object */
+    CRegister() {
+        m_counter = new RegisterCounter();
+        m_counter->ref_count = 1;
+    }
+
+    /**
+     * @brief Destroy the CRegister object
+     * and dealocates the memory if there are no other references to this object
+     */
+    ~CRegister() {
+        if ((--(m_counter->ref_count)) == 0) {
+            for (size_t i = 0; i < m_counter->m_data.Size(); i += 1) {
+                delete m_counter->m_data[i];
+            }
+            delete m_counter;
         }
+    }
+
+    /**
+     * @brief Construct a new CRegister object from the old one provided
+     * @param old
+     */
+    CRegister(const CRegister& old) : m_counter(old.m_counter) {
+        m_counter->ref_count += 1;
     }
 
     CRegister& operator=(CRegister old) {
-        std::swap(m_data, old.m_data);
+        std::swap(m_counter, old.m_counter);
         return *this;
     }
 
@@ -505,8 +541,8 @@ class CRegister {
     bool AddCar(const char* rz, const char* name, const char* surname) {
         // cout << "Adding a car..." << endl;
         // check if car with the same rz exists
-        for (size_t i = 0; i < m_data.Size(); i += 1) {
-            if (strcmp(rz, m_data[i]->Rz()) == 0) {
+        for (size_t i = 0; i < m_counter->m_data.Size(); i += 1) {
+            if (strcmp(rz, m_counter->m_data[i]->Rz()) == 0) {
                 // if it does exist, return false
                 return false;
             }
@@ -515,13 +551,18 @@ class CRegister {
 
         // cout << "============================================================" << endl;
         // cout << "Before adding:" << endl;
-        // m_data.print(true);
+        // m_counter->m_data.print(true);
         // cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
 
-        m_data.Push_back(new CarRecord(rz, name, surname));
+        // if there is more than one reference to the current CCarRegistry
+        if (m_counter->ref_count > 1) {
+            // then we need to make a deep copy
+            _make_deep_copy();
+        }
+        m_counter->m_data.Push_back(new CarRecord(rz, name, surname));
 
         // cout << "After adding:" << endl;
-        // m_data.print(true);
+        // m_counter->m_data.print(true);
         // cout << "============================================================" << endl;
 
         return true;
@@ -538,19 +579,24 @@ class CRegister {
         bool deleted = false;
         // TODO unsure if this should be deleting just one record or all records with the matching rz
         // find the car with the same rz
-        for (int i = (int)m_data.Size() - 1; i >= 0; i -= 1) {
-            if (strcmp(rz, m_data[i]->Rz()) == 0) {
+        for (int i = (int)m_counter->m_data.Size() - 1; i >= 0; i -= 1) {
+            if (strcmp(rz, m_counter->m_data[i]->Rz()) == 0) {
                 // when found, remove it
                 // cout << "============================================================" << endl;
                 // cout << "Before delete:" << endl;
-                // m_data.print(true);
+                // m_counter->m_data.print(true);
 
-                // cout << "=============== DELETING rz: '" << m_data[i].rz << "' ===============" << endl;
-                delete m_data[i];
-                m_data.Erase(i);
+                // cout << "=============== DELETING rz: '" << m_counter->m_data[i].rz << "' ===============" << endl;
+                // if there is more than one reference to the current CCarRegistry
+                if (m_counter->ref_count > 1) {
+                    // then we need to make a deep copy
+                    _make_deep_copy();
+                }
+                delete m_counter->m_data[i];
+                m_counter->m_data.Erase(i);
 
                 // cout << "After delete:" << endl;
-                // m_data.print(true);
+                // m_counter->m_data.print(true);
                 // cout << "============================================================" << endl;
 
                 deleted = true;
@@ -571,8 +617,8 @@ class CRegister {
         int count = 0;
 
         // Iterate over our container and increase count if the name and surname match.
-        for (size_t i = 0; i < m_data.Size(); i += 1) {
-            if (!m_data[i]->IsArchived() && strcmp(name, m_data[i]->Name()) == 0 && strcmp(surname, m_data[i]->Surname()) == 0) {
+        for (size_t i = 0; i < m_counter->m_data.Size(); i += 1) {
+            if (!m_counter->m_data[i]->IsArchived() && strcmp(name, m_counter->m_data[i]->Name()) == 0 && strcmp(surname, m_counter->m_data[i]->Surname()) == 0) {
                 count++;
             }
         }
@@ -593,18 +639,18 @@ class CRegister {
         // cout << "Couting owners..." << endl;
         int count = 0;
         // Iterate over our container and increase count if the RZ.
-        for (size_t i = 0; i < m_data.Size(); i += 1) {
-            if (strcmp(RZ, m_data[i]->Rz()) != 0)
+        for (size_t i = 0; i < m_counter->m_data.Size(); i += 1) {
+            if (strcmp(RZ, m_counter->m_data[i]->Rz()) != 0)
                 continue;
 
             bool duplicate = false;
             // iterate over the previously checked names
             for (size_t j = 0; j < i; j += 1) {
-                if (strcmp(RZ, m_data[j]->Rz()) != 0)
+                if (strcmp(RZ, m_counter->m_data[j]->Rz()) != 0)
                     continue;
 
                 // if any match, it's a duplicate name
-                if (strcmp(m_data[i]->Name(), m_data[j]->Name()) == 0 && strcmp(m_data[i]->Surname(), m_data[j]->Surname()) == 0) {
+                if (strcmp(m_counter->m_data[i]->Name(), m_counter->m_data[j]->Name()) == 0 && strcmp(m_counter->m_data[i]->Surname(), m_counter->m_data[j]->Surname()) == 0) {
                     duplicate = true;
                     break;
                 }
@@ -632,27 +678,32 @@ class CRegister {
     bool Transfer(const char* rz, const char* nName, const char* nSurname) {
         // cout << "Transferring..." << endl;
         // find the car we are trying to transfer
-        for (size_t i = 0; i < m_data.Size(); i += 1) {
+        for (size_t i = 0; i < m_counter->m_data.Size(); i += 1) {
             // check if the car isn't archived and if RZ matches
-            if (!m_data[i]->IsArchived() && strcmp(rz, m_data[i]->Rz()) == 0) {
+            if (!m_counter->m_data[i]->IsArchived() && strcmp(rz, m_counter->m_data[i]->Rz()) == 0) {
                 // we found a car with a matching rz that isn't archived
 
                 // check if the owners are different
-                if (strcmp(nSurname, m_data[i]->Surname()) == 0 && strcmp(nName, m_data[i]->Name()) == 0) {
+                if (strcmp(nSurname, m_counter->m_data[i]->Surname()) == 0 && strcmp(nName, m_counter->m_data[i]->Name()) == 0) {
                     // owners are the same
                     return false;
                 }
                 // cout << "============================================================" << endl;
                 // cout << "Before transfer:" << endl;
-                // m_data.print(true);
+                // m_counter->m_data.print(true);
 
-                // cout << "=============== TRANSFERRING [" << m_data[i]->rz << "] " << m_data[i]->name << " " << m_data[i]->surname << " -> " << nName << " " << nSurname << " ===============" << endl;
+                // cout << "=============== TRANSFERRING [" << m_counter->m_data[i]->rz << "] " << m_counter->m_data[i]->name << " " << m_counter->m_data[i]->surname << " -> " << nName << " " << nSurname << " ===============" << endl;
 
-                m_data[i]->Archive();
-                m_data.Push_back(new CarRecord(rz, nName, nSurname));
+                // if there is more than one reference to the current CCarRegistry
+                if (m_counter->ref_count > 1) {
+                    // then we need to make a deep copy
+                    _make_deep_copy();
+                }
+                m_counter->m_data[i]->Archive();
+                m_counter->m_data.Push_back(new CarRecord(rz, nName, nSurname));
 
                 // cout << "After transfer:" << endl;
-                // m_data.print(true);
+                // m_counter->m_data.print(true);
                 // cout << "============================================================" << endl;
 
                 return true;
@@ -672,8 +723,8 @@ class CRegister {
      */
     CCarList ListCars(const char* name, const char* surname) const {
         // cout << "Listing cars..." << endl;
-        // m_data.print(true);
-        return CCarList(m_data, name, surname);
+        // m_counter->m_data.print(true);
+        return CCarList(m_counter->m_data, name, surname);
     }
 
     /**
@@ -685,12 +736,12 @@ class CRegister {
      */
     COwnerList ListOwners(const char* RZ) const {
         // cout << "Listing owners..." << endl;
-        // m_data.print(true);
-        return COwnerList(m_data, RZ);
+        // m_counter->m_data.print(true);
+        return COwnerList(m_counter->m_data, RZ);
     }
 
     void Print() {
-        m_data.Print(true);
+        m_counter->m_data.Print(true);
     }
 };
 #ifndef __PROGTEST__
