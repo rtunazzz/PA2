@@ -202,16 +202,29 @@ class CarRecord {
     /** @brief Whether or not is the card record archived */
     bool m_archived;
 
-    /** @brief License Plate number of the car */
-    char* m_rz;
-    /** @brief Name of the car's owner */
-    char* m_name;
-    /** @brief Surname of the car's owner */
-    char* m_surname;
+    /** @brief Reference counter structure */
+    struct RecordCounter {
+        /** @brief Current reference count */
+        int ref_count = 0;
+        /** @brief License Plate number of the car */
+        char* m_rz;
+        /** @brief Name of the car's owner */
+        char* m_name;
+        /** @brief Surname of the car's owner */
+        char* m_surname;
+    };
+
+    /** @brief Reference counter */
+    RecordCounter* m_counter;
 
    public:
     /** @brief Construct a new CarRecord object without any parameters */
-    CarRecord() : m_archived(false), m_rz(nullptr), m_name(nullptr), m_surname(nullptr) {}
+    CarRecord() : m_archived(false) {
+        m_counter = nullptr;
+        m_counter->m_rz = nullptr;
+        m_counter->m_name = nullptr;
+        m_counter->m_surname = nullptr;
+    }
 
     /**
      * @brief Construct a new CarRecord object with the parameters specified
@@ -220,44 +233,40 @@ class CarRecord {
      * @param _surname Surname of the car's owner
      */
     CarRecord(const char* _rz, const char* _name, const char* _surname) : m_archived(false) {
-        m_rz = new char[strlen(_rz) + 1];
-        strcpy(m_rz, _rz);
+        m_counter = new RecordCounter();
+        m_counter->m_rz = new char[strlen(_rz) + 1];
+        strcpy(m_counter->m_rz, _rz);
 
-        m_name = new char[strlen(_name) + 1];
-        strcpy(m_name, _name);
+        m_counter->m_name = new char[strlen(_name) + 1];
+        strcpy(m_counter->m_name, _name);
 
-        m_surname = new char[strlen(_surname) + 1];
-        strcpy(m_surname, _surname);
+        m_counter->m_surname = new char[strlen(_surname) + 1];
+        strcpy(m_counter->m_surname, _surname);
+
+        m_counter->ref_count = 1;
     }
 
     /** @brief Destroy the Car Record object and dealocates memory */
     ~CarRecord() {
-        delete[] m_rz;
-        delete[] m_name;
-        delete[] m_surname;
+        if ((--(m_counter->ref_count)) == 0) {
+            if (m_counter->m_rz != nullptr) delete[] m_counter->m_rz;
+            if (m_counter->m_name != nullptr) delete[] m_counter->m_name;
+            if (m_counter->m_surname != nullptr) delete[] m_counter->m_surname;
+            delete m_counter;
+        }
     }
 
     /**
      * @brief Construct a new Car Record object from the old car provided
      * @param old CarRecord to copy
      */
-    CarRecord(const CarRecord& old) : m_archived(old.IsArchived()) {
-        m_rz = new char[strlen(old.m_rz) + 1];
-        strcpy(m_rz, old.m_rz);
-
-        m_name = new char[strlen(old.m_name) + 1];
-        strcpy(m_name, old.m_name);
-
-        m_surname = new char[strlen(old.m_surname) + 1];
-        strcpy(m_surname, old.m_surname);
+    CarRecord(const CarRecord& old) : m_archived(old.m_archived), m_counter(old.m_counter) {
+        m_counter->ref_count += 1;
     }
 
     CarRecord& operator=(CarRecord old) {
-        std::swap(m_rz, old.m_rz);
-        std::swap(m_name, old.m_name);
-        std::swap(m_surname, old.m_surname);
-
-        m_archived = old.IsArchived();
+        std::swap(m_archived, old.m_archived);
+        std::swap(m_counter, old.m_counter);
         return *this;
     }
 
@@ -266,7 +275,7 @@ class CarRecord {
      * @return const char* the license plate
      */
     const char* Rz() const {
-        return m_rz;
+        return m_counter->m_rz;
     }
 
     /**
@@ -274,7 +283,7 @@ class CarRecord {
      * @return const char* (first) name of the owner
      */
     const char* Name() const {
-        return m_name;
+        return m_counter->m_name;
     }
 
     /**
@@ -282,7 +291,7 @@ class CarRecord {
      * @return const char* surname of the owner
      */
     const char* Surname() const {
-        return m_surname;
+        return m_counter->m_surname;
     }
 
     /** @brief Archives the CarRecord */
