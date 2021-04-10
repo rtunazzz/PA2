@@ -233,9 +233,9 @@ class CarRecord {
 
     /** @brief Destroy the Car Record object and dealocates memory */
     ~CarRecord() {
-        delete rz;
-        delete name;
-        delete surname;
+        delete[] rz;
+        delete[] name;
+        delete[] surname;
     }
 
     /**
