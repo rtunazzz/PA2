@@ -167,6 +167,10 @@ class MyVector {
         m_size += 1;
     }
 
+    /**
+     * @brief Erases an element specified by the position from our container
+     * @param position Position of the element to delete
+     */
     void erase(const size_t position) {
         // fill the "deleted" position
         m_size -= 1;
@@ -387,7 +391,6 @@ class COwnerList : public CRegistryIterator {
     * @param _rz License plate number to construct the COwnerList over
      */
     void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _rz) {
-        // TODO is this causing an issue?
         for (int i = (int)_registry.size() - 1; i >= 0; i -= 1) {
             if (strcmp(_rz, _registry[i]->rz) == 0) {
                 m_registry.push_back(new CarRecord(*_registry[i]));
@@ -773,15 +776,43 @@ int main(void) {
 
     CRegister b3;
     b3.AddCar("ABC-12-34", "John", "Smith");
+    b3.AddCar("", "", "");
+    b3.AddCar(nullptr, nullptr, nullptr);
+    COwnerList cowners;
     {
         CRegister b4(b3);
         b4.AddCar("IDKIDKIDKIDK", "COPY", "TEST");
+        b4.AddCar("IDKIDKIDKIDK", "COPY2", "TEST");
+        b4.AddCar("IDKIDKIDKIDK", "COPY3", "TEST");
+        b4.AddCar("IDKIDKIDKIDK", "COPY4", "TEST");
         b4.AddCar("IDKIDKIDKIDK2", "COPY", "TEST");
         b4.AddCar("IDKIDKIDKIDK3", "COPY", "TEST");
+        cowners = b4.ListOwners("IDKIDKIDKIDK");
+        b3 = b4;
+    }
+    b3.AddCar("aslkdglasdga", "lasdgkasdga", "lasdgkaldga");
+    assert(!cowners.AtEnd() && !strcmp(cowners.Name(), "John") && !strcmp(cowners.Surname(), "Smith"));
+    cowners = b3.ListOwners("aslkdglasdga");
+    assert(!cowners.AtEnd() && !strcmp(cowners.Name(), "John") && !strcmp(cowners.Surname(), "Smith"));
+    {
+        CRegister a1 = CRegister();
+        a1.AddCar("IDKIDKIDKIDK", "COPY", "TEST");
+        a1.AddCar("IDKIDKIDKIDK2", "COPY", "TEST");
+        a1.AddCar("IDKIDKIDKIDK3", "COPY", "TEST");
+        b3 = a1;
+    }
+    {
+        CRegister a1 = CRegister(b3);
+        a1.AddCar("IDKIDKIDKIDK", "COPY", "TEST");
+        a1.AddCar("IDKIDKIDKIDK2", "COPY", "TEST");
+        a1.AddCar("IDKIDKIDKIDK3", "COPY", "TEST");
+        b3 = a1;
     }
     b3.Transfer("ABC-12-34", "Jeremy", "Black");
     b3.Transfer("ABC-12-34", "John", "Smith");
     b3.Transfer("ABC-12-34", "Jeremy", "Black");
+    b3.AddCar("ABC-12-34", "John", "Smith");
+    b3.DelCar("IDKIDKIDKIDK3");
     assert(b3.CountOwners("ABC-12-34") == 2);
 
     CRegister b4 = b3;
