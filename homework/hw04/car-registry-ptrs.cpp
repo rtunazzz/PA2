@@ -318,7 +318,7 @@ class CarRecord {
 /** @brief Represents an iterator in a car registry */
 class CRegistryIterator {
    private:
-    size_t m_index;
+    size_t m_index = 0;
 
    protected:
     MyVector<CarRecord*> m_registry;
@@ -332,7 +332,7 @@ class CRegistryIterator {
     }
 
    public:
-    CRegistryIterator() : m_index(0){};
+    CRegistryIterator() = default;
     virtual ~CRegistryIterator() = default;
 
     /**
@@ -342,7 +342,7 @@ class CRegistryIterator {
      */
     CRegistryIterator(const CRegistryIterator& old) : m_index(old.m_index) {
         for (size_t i = 0; i < old.m_registry.Size(); i += 1) {
-            m_registry.Push_back(new CarRecord(*old.m_registry[i]));
+            m_registry.Push_back(old.m_registry[i]);
         }
     }
 
@@ -376,19 +376,16 @@ class CCarList : public CRegistryIterator {
     void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _name, const char* _surname) {
         for (size_t i = 0; i < _registry.Size(); i += 1) {
             if (!_registry[i]->IsArchived() && strcmp(_name, _registry[i]->Name()) == 0 && strcmp(_surname, _registry[i]->Surname()) == 0) {
-                m_registry.Push_back(new CarRecord(*_registry[i]));
+                m_registry.Push_back(_registry[i]);
             }
         }
     }
 
    public:
+    /** @brief Constructs the CCarList object. */
     CCarList() = default;
     /** @brief Destroys the CCarList object. */
-    ~CCarList() {
-        for (size_t i = 0; i < m_registry.Size(); i += 1) {
-            delete m_registry[i];
-        }
-    }
+    ~CCarList() = default;
 
     /**
     * @brief Construct a new CCarList object.
@@ -425,19 +422,16 @@ class COwnerList : public CRegistryIterator {
     void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _rz) {
         for (int i = (int)_registry.Size() - 1; i >= 0; i -= 1) {
             if (strcmp(_rz, _registry[i]->Rz()) == 0) {
-                m_registry.Push_back(new CarRecord(*_registry[i]));
+                m_registry.Push_back(_registry[i]);
             }
         }
     }
 
    public:
+    /** @brief Constructs the COwnerList object. */
     COwnerList() = default;
     /** @brief Destroys the COwnerList object. */
-    ~COwnerList() {
-        for (size_t i = 0; i < m_registry.Size(); i += 1) {
-            delete m_registry[i];
-        }
-    }
+    ~COwnerList() = default;
 
     /**
     * @brief Construct a new COwnerList object.
@@ -722,8 +716,6 @@ class CRegister {
      * @return CCarList Object to iterate over
      */
     CCarList ListCars(const char* name, const char* surname) const {
-        // cout << "Listing cars..." << endl;
-        // m_counter->m_data.print(true);
         return CCarList(m_counter->m_data, name, surname);
     }
 
@@ -735,8 +727,6 @@ class CRegister {
      * @return COwnerList Object to iterate over
      */
     COwnerList ListOwners(const char* RZ) const {
-        // cout << "Listing owners..." << endl;
-        // m_counter->m_data.print(true);
         return COwnerList(m_counter->m_data, RZ);
     }
 
