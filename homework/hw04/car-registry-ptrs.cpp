@@ -506,7 +506,7 @@ class CRegister {
         bool deleted = false;
         // TODO unsure if this should be deleting just one record or all records with the matching rz
         // find the car with the same rz
-        for (size_t i = 0; i < m_data.size(); i += 1) {
+        for (int i = (int)m_data.size() - 1; i >= 0; i -= 1) {
             if (strcmp(rz, m_data[i]->rz) == 0) {
                 // when found, remove it
                 // cout << "============================================================" << endl;
