@@ -175,11 +175,18 @@ class MyVector {
         }
     }
 
-    /** @brief Utility method to print the vector on the standard output. */
-    void print() const {
+    /**
+     * @brief Utility method to print the vector on the standard output.
+     * @param usePtrs Whether we're trying to print a vector of pointers or not.
+     */
+    void print(bool usePtrs) const {
         std::cout << "[ " << std::endl;
         for (size_t i = 0; i < m_size; ++i) {
-            std::cout << "\t" << *m_buffer[i] << std::endl;
+            if (usePtrs) {
+                std::cout << "\t" << *m_buffer[i] << std::endl;
+            } else {
+                std::cout << "\t" << m_buffer[i] << std::endl;
+            }
         }
         std::cout << "] " << std::endl;
     }
@@ -272,12 +279,57 @@ class CarRecord {
     }
 };
 
-/** @brief Represents an iterator for cars in a car registry */
-class CCarList {
+/** @brief Represents an iterator in a car registry */
+class CRegistryIterator {
    private:
-    MyVector<CarRecord*> m_registry;
     size_t m_index;
 
+   protected:
+    MyVector<CarRecord*> m_registry;
+
+    /**
+     * @brief Gets the current iterator index.
+     * @return size_t index
+     */
+    size_t _getCurrIndex() const {
+        return m_index;
+    }
+
+   public:
+    CRegistryIterator() : m_index(0){};
+    virtual ~CRegistryIterator() = default;
+
+    /**
+     * @brief Copyconstructor which constructs a new CRegistryIterator object.
+     * Creates a deep copy of the old CRegistryIterator passed in.
+     * @param old CRegistryIterator to copy
+     */
+    CRegistryIterator(const CRegistryIterator& old) : m_index(old.m_index) {
+        for (size_t i = 0; i < old.m_registry.size(); i += 1) {
+            m_registry.push_back(new CarRecord(*old.m_registry[i]));
+        }
+    }
+
+    CRegistryIterator& operator=(CRegistryIterator old) {
+        std::swap(m_index, old.m_index);
+        std::swap(m_registry, old.m_registry);
+        return *this;
+    }
+
+    /**
+     * @brief Checks whether or not we are in the end of the list.
+     * @return true When we are in the end of the list
+     * @return false When we aren't in the end of the list)
+     */
+    bool AtEnd(void) const { return m_registry.size() <= m_index; }
+
+    /** @brief Moves the current position in the list one forward */
+    void Next(void) { m_index++; }
+};
+
+/** @brief Represents an iterator for cars in a car registry */
+class CCarList : public CRegistryIterator {
+   private:
     /**
      * @brief Filters through the _registry passed in
      * and adds to our list all occurances that match the provided name & surname
@@ -310,25 +362,8 @@ class CCarList {
     * @param _name Name of the person to construct the CCarList over
     * @param _surname Surname of the person to construct the CCarList over
     */
-    CCarList(const MyVector<CarRecord*>& _registry, const char* _name, const char* _surname) : m_index(0) {
+    CCarList(const MyVector<CarRecord*>& _registry, const char* _name, const char* _surname) : CRegistryIterator() {
         filterAndAdd(_registry, _name, _surname);
-    }
-
-    /**
-     * @brief Copyconstructor which constructs a new CCarList object.
-     * Creates a deep copy of the old CCarList passed in.
-     * @param old CCarList to copy
-     */
-    CCarList(const CCarList& old) : m_index(old.m_index) {
-        for (size_t i = 0; i < old.m_registry.size(); i += 1) {
-            m_registry.push_back(new CarRecord(*old.m_registry[i]));
-        }
-    }
-
-    CCarList& operator=(CCarList old) {
-        std::swap(m_index, old.m_index);
-        std::swap(m_registry, old.m_registry);
-        return *this;
     }
 
     /**
@@ -337,27 +372,14 @@ class CCarList {
      */
     const char* RZ(void) const {
         if (!AtEnd())
-            return m_registry[m_index]->rz;
+            return m_registry[_getCurrIndex()]->rz;
         return nullptr;
     }
-
-    /**
-     * @brief Checks whether or not we are in the end of the list.
-     * @return true When we are in the end of the list
-     * @return false When we aren't in the end of the list)
-     */
-    bool AtEnd(void) const { return m_registry.size() <= m_index; }
-
-    /** @brief Moves the current position in the list one forward */
-    void Next(void) { m_index++; }
 };
 
 /** @brief Represents an iterator for owners in a car registry */
-class COwnerList {
+class COwnerList : public CRegistryIterator {
    private:
-    MyVector<CarRecord*> m_registry;
-    size_t m_index;
-
     /**
      * @brief Filters through the _registry passed in
      * and adds to our list all occurances that match the provided name & surname
@@ -371,7 +393,6 @@ class COwnerList {
                 m_registry.push_back(new CarRecord(*_registry[i]));
             }
         }
-        m_registry.print();
     }
 
    public:
@@ -390,33 +411,17 @@ class COwnerList {
     * @param _registry Registry to construst the COwnerList over
     * @param _rz License plate number to construct the COwnerList over
     */
-    COwnerList(const MyVector<CarRecord*>& _registry, const char* _rz) : m_index(0) {
+    COwnerList(const MyVector<CarRecord*>& _registry, const char* _rz) : CRegistryIterator() {
         filterAndAdd(_registry, _rz);
     }
 
-    /**
-     * @brief Copyconstructor which constructs a new COwnerList object.
-     * Creates a deep copy of the old COwnerList passed in.
-     * @param old COwnerList to copy
-     */
-    COwnerList(const COwnerList& old) : m_index(old.m_index) {
-        for (size_t i = 0; i < old.m_registry.size(); i += 1) {
-            m_registry.push_back(new CarRecord(*old.m_registry[i]));
-        }
-    }
-
-    COwnerList& operator=(COwnerList old) {
-        std::swap(m_index, old.m_index);
-        std::swap(m_registry, old.m_registry);
-        return *this;
-    }
     /**
      * @brief Returns the name of the owner we're currently on.
      * @return const char* Name
      */
     const char* Name(void) const {
         if (!AtEnd())
-            return m_registry[m_index]->name;
+            return m_registry[_getCurrIndex()]->name;
         return nullptr;
     }
     /**
@@ -425,17 +430,9 @@ class COwnerList {
      */
     const char* Surname(void) const {
         if (!AtEnd())
-            return m_registry[m_index]->surname;
+            return m_registry[_getCurrIndex()]->surname;
         return nullptr;
     }
-    /**
-     * @brief Checks whether or not we are in the end of the list.
-     * @return true When we are in the end of the list
-     * @return false When we aren't in the end of the list)
-     */
-    bool AtEnd(void) const { return m_registry.size() <= m_index; }
-    /** @brief Moves the current position in the list one forward */
-    void Next(void) { m_index++; }
 };
 
 /** @brief Represents a car registry */
@@ -483,13 +480,13 @@ class CRegister {
 
         // cout << "============================================================" << endl;
         // cout << "Before adding:" << endl;
-        // m_data.print();
+        // m_data.print(true);
         // cout << "=============== Adding rz: '" << rz << "' =====================" << endl;
 
         m_data.push_back(new CarRecord(rz, name, surname));
 
         // cout << "After adding:" << endl;
-        // m_data.print();
+        // m_data.print(true);
         // cout << "============================================================" << endl;
 
         return true;
@@ -511,14 +508,14 @@ class CRegister {
                 // when found, remove it
                 // cout << "============================================================" << endl;
                 // cout << "Before delete:" << endl;
-                // m_data.print();
+                // m_data.print(true);
 
                 // cout << "=============== DELETING rz: '" << m_data[i].rz << "' ===============" << endl;
                 delete m_data[i];
                 m_data.erase(i);
 
                 // cout << "After delete:" << endl;
-                // m_data.print();
+                // m_data.print(true);
                 // cout << "============================================================" << endl;
 
                 deleted = true;
@@ -612,7 +609,7 @@ class CRegister {
                 }
                 // cout << "============================================================" << endl;
                 // cout << "Before transfer:" << endl;
-                // m_data.print();
+                // m_data.print(true);
 
                 // cout << "=============== TRANSFERRING [" << m_data[i]->rz << "] " << m_data[i]->name << " " << m_data[i]->surname << " -> " << nName << " " << nSurname << " ===============" << endl;
 
@@ -620,7 +617,7 @@ class CRegister {
                 m_data.push_back(new CarRecord(rz, nName, nSurname));
 
                 // cout << "After transfer:" << endl;
-                // m_data.print();
+                // m_data.print(true);
                 // cout << "============================================================" << endl;
 
                 return true;
@@ -640,7 +637,7 @@ class CRegister {
      */
     CCarList ListCars(const char* name, const char* surname) const {
         // cout << "Listing cars..." << endl;
-        // m_data.print();
+        // m_data.print(true);
         return CCarList(m_data, name, surname);
     }
 
@@ -653,12 +650,12 @@ class CRegister {
      */
     COwnerList ListOwners(const char* RZ) const {
         // cout << "Listing owners..." << endl;
-        // m_data.print();
+        // m_data.print(true);
         return COwnerList(m_data, RZ);
     }
 
     void Print() {
-        m_data.print();
+        m_data.print(true);
     }
 };
 #ifndef __PROGTEST__
