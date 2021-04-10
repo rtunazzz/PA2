@@ -202,17 +202,16 @@ class CarRecord {
     /** @brief Whether or not is the card record archived */
     bool m_archived;
 
-   public:
-    // TODO make these private & add getters and setters
     /** @brief License Plate number of the car */
-    char* rz;
+    char* m_rz;
     /** @brief Name of the car's owner */
-    char* name;
+    char* m_name;
     /** @brief Surname of the car's owner */
-    char* surname;
+    char* m_surname;
 
+   public:
     /** @brief Construct a new CarRecord object without any parameters */
-    CarRecord() : m_archived(false), rz(nullptr), name(nullptr), surname(nullptr) {}
+    CarRecord() : m_archived(false), m_rz(nullptr), m_name(nullptr), m_surname(nullptr) {}
 
     /**
      * @brief Construct a new CarRecord object with the parameters specified
@@ -221,21 +220,21 @@ class CarRecord {
      * @param _surname Surname of the car's owner
      */
     CarRecord(const char* _rz, const char* _name, const char* _surname) : m_archived(false) {
-        rz = new char[strlen(_rz) + 1];
-        strcpy(rz, _rz);
+        m_rz = new char[strlen(_rz) + 1];
+        strcpy(m_rz, _rz);
 
-        name = new char[strlen(_name) + 1];
-        strcpy(name, _name);
+        m_name = new char[strlen(_name) + 1];
+        strcpy(m_name, _name);
 
-        surname = new char[strlen(_surname) + 1];
-        strcpy(surname, _surname);
+        m_surname = new char[strlen(_surname) + 1];
+        strcpy(m_surname, _surname);
     }
 
     /** @brief Destroy the Car Record object and dealocates memory */
     ~CarRecord() {
-        delete[] rz;
-        delete[] name;
-        delete[] surname;
+        delete[] m_rz;
+        delete[] m_name;
+        delete[] m_surname;
     }
 
     /**
@@ -243,23 +242,47 @@ class CarRecord {
      * @param old CarRecord to copy
      */
     CarRecord(const CarRecord& old) : m_archived(old.IsArchived()) {
-        rz = new char[strlen(old.rz) + 1];
-        strcpy(rz, old.rz);
+        m_rz = new char[strlen(old.m_rz) + 1];
+        strcpy(m_rz, old.m_rz);
 
-        name = new char[strlen(old.name) + 1];
-        strcpy(name, old.name);
+        m_name = new char[strlen(old.m_name) + 1];
+        strcpy(m_name, old.m_name);
 
-        surname = new char[strlen(old.surname) + 1];
-        strcpy(surname, old.surname);
+        m_surname = new char[strlen(old.m_surname) + 1];
+        strcpy(m_surname, old.m_surname);
     }
 
     CarRecord& operator=(CarRecord old) {
-        std::swap(rz, old.rz);
-        std::swap(name, old.name);
-        std::swap(surname, old.surname);
+        std::swap(m_rz, old.m_rz);
+        std::swap(m_name, old.m_name);
+        std::swap(m_surname, old.m_surname);
 
         m_archived = old.IsArchived();
         return *this;
+    }
+
+    /**
+     * @brief Getter for the rz - license plate of the CarRecord
+     * @return const char* the license plate
+     */
+    const char* Rz() const {
+        return m_rz;
+    }
+
+    /**
+     * @brief Getter for the (first) name of the owner of the CarRecord
+     * @return const char* (first) name of the owner
+     */
+    const char* Name() const {
+        return m_name;
+    }
+
+    /**
+     * @brief Getter for the surname of the owner of the CarRecord
+     * @return const char* surname of the owner
+     */
+    const char* Surname() const {
+        return m_surname;
     }
 
     /** @brief Archives the CarRecord */
@@ -277,7 +300,7 @@ class CarRecord {
     }
 
     friend ostream& operator<<(ostream& os, const CarRecord& c) {
-        os << "[" << c.rz << "] - owned by: " << c.name << " " << c.surname << " (archived: " << (c.IsArchived() ? "true" : "false")
+        os << "[" << c.Rz() << "] - owned by: " << c.Name() << " " << c.Surname() << " (archived: " << (c.IsArchived() ? "true" : "false")
            << ")";
         return os;
     }
@@ -343,7 +366,7 @@ class CCarList : public CRegistryIterator {
      */
     void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _name, const char* _surname) {
         for (size_t i = 0; i < _registry.size(); i += 1) {
-            if (!_registry[i]->IsArchived() && strcmp(_name, _registry[i]->name) == 0 && strcmp(_surname, _registry[i]->surname) == 0) {
+            if (!_registry[i]->IsArchived() && strcmp(_name, _registry[i]->Name()) == 0 && strcmp(_surname, _registry[i]->Surname()) == 0) {
                 m_registry.push_back(new CarRecord(*_registry[i]));
             }
         }
@@ -376,7 +399,7 @@ class CCarList : public CRegistryIterator {
      */
     const char* RZ(void) const {
         if (!AtEnd())
-            return m_registry[_getCurrIndex()]->rz;
+            return m_registry[_getCurrIndex()]->Rz();
         return nullptr;
     }
 };
@@ -392,7 +415,7 @@ class COwnerList : public CRegistryIterator {
      */
     void filterAndAdd(const MyVector<CarRecord*>& _registry, const char* _rz) {
         for (int i = (int)_registry.size() - 1; i >= 0; i -= 1) {
-            if (strcmp(_rz, _registry[i]->rz) == 0) {
+            if (strcmp(_rz, _registry[i]->Rz()) == 0) {
                 m_registry.push_back(new CarRecord(*_registry[i]));
             }
         }
@@ -424,7 +447,7 @@ class COwnerList : public CRegistryIterator {
      */
     const char* Name(void) const {
         if (!AtEnd())
-            return m_registry[_getCurrIndex()]->name;
+            return m_registry[_getCurrIndex()]->Name();
         return nullptr;
     }
     /**
@@ -433,7 +456,7 @@ class COwnerList : public CRegistryIterator {
      */
     const char* Surname(void) const {
         if (!AtEnd())
-            return m_registry[_getCurrIndex()]->surname;
+            return m_registry[_getCurrIndex()]->Surname();
         return nullptr;
     }
 };
@@ -474,7 +497,7 @@ class CRegister {
         // cout << "Adding a car..." << endl;
         // check if car with the same rz exists
         for (size_t i = 0; i < m_data.size(); i += 1) {
-            if (strcmp(rz, m_data[i]->rz) == 0) {
+            if (strcmp(rz, m_data[i]->Rz()) == 0) {
                 // if it does exist, return false
                 return false;
             }
@@ -507,7 +530,7 @@ class CRegister {
         // TODO unsure if this should be deleting just one record or all records with the matching rz
         // find the car with the same rz
         for (int i = (int)m_data.size() - 1; i >= 0; i -= 1) {
-            if (strcmp(rz, m_data[i]->rz) == 0) {
+            if (strcmp(rz, m_data[i]->Rz()) == 0) {
                 // when found, remove it
                 // cout << "============================================================" << endl;
                 // cout << "Before delete:" << endl;
@@ -540,7 +563,7 @@ class CRegister {
 
         // Iterate over our container and increase count if the name and surname match.
         for (size_t i = 0; i < m_data.size(); i += 1) {
-            if (!m_data[i]->IsArchived() && strcmp(name, m_data[i]->name) == 0 && strcmp(surname, m_data[i]->surname) == 0) {
+            if (!m_data[i]->IsArchived() && strcmp(name, m_data[i]->Name()) == 0 && strcmp(surname, m_data[i]->Surname()) == 0) {
                 count++;
             }
         }
@@ -562,17 +585,17 @@ class CRegister {
         int count = 0;
         // Iterate over our container and increase count if the RZ.
         for (size_t i = 0; i < m_data.size(); i += 1) {
-            if (strcmp(RZ, m_data[i]->rz) != 0)
+            if (strcmp(RZ, m_data[i]->Rz()) != 0)
                 continue;
 
             bool duplicate = false;
             // iterate over the previously checked names
             for (size_t j = 0; j < i; j += 1) {
-                if (strcmp(RZ, m_data[j]->rz) != 0)
+                if (strcmp(RZ, m_data[j]->Rz()) != 0)
                     continue;
 
                 // if any match, it's a duplicate name
-                if (strcmp(m_data[i]->name, m_data[j]->name) == 0 && strcmp(m_data[i]->surname, m_data[j]->surname) == 0) {
+                if (strcmp(m_data[i]->Name(), m_data[j]->Name()) == 0 && strcmp(m_data[i]->Surname(), m_data[j]->Surname()) == 0) {
                     duplicate = true;
                     break;
                 }
@@ -602,11 +625,11 @@ class CRegister {
         // find the car we are trying to transfer
         for (size_t i = 0; i < m_data.size(); i += 1) {
             // check if the car isn't archived and if RZ matches
-            if (!m_data[i]->IsArchived() && strcmp(rz, m_data[i]->rz) == 0) {
+            if (!m_data[i]->IsArchived() && strcmp(rz, m_data[i]->Rz()) == 0) {
                 // we found a car with a matching rz that isn't archived
 
                 // check if the owners are different
-                if (strcmp(nSurname, m_data[i]->surname) == 0 && strcmp(nName, m_data[i]->name) == 0) {
+                if (strcmp(nSurname, m_data[i]->Surname()) == 0 && strcmp(nName, m_data[i]->Name()) == 0) {
                     // owners are the same
                     return false;
                 }
