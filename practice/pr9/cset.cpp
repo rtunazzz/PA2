@@ -31,8 +31,13 @@ class CSet {
      */
     CSet(const CSet& _old) {}
 
-    // operator=
-    CSet& operator=(const CSet& _old) {}
+    /**
+     * @brief Overloads the = operator
+     * and constructs a deep copy of the CSet passed in.
+     * @param _old CSet to base the deep copy of
+     * @return CSet& Reference to the newly created CSet
+     */
+    CSet& operator=(CSet _old) {}
 
     /** @brief Destroy the CSet object */
     ~CSet() {}
