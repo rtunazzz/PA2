@@ -19,10 +19,13 @@ using namespace std;
 template <typename T>
 class CSet {
    private:
-    struct CNode {
+    class CNode {
+       public:
         CNode* m_next;
         T m_val;
         const T& Value() const { return m_val; }
+        CNode() = delete;
+        CNode(const T& val) : m_next(nullptr), m_val(val) {}
     };
 
     CNode* m_begin;
@@ -79,9 +82,7 @@ class CSet {
         CNode* oldNode = _old.m_begin;
         CNode* next = m_begin;
         while (oldNode != nullptr) {
-            next = new CNode();
-            next->m_val = oldNode->m_val;
-            next->m_next = oldNode->m_next;
+            next = new CNode(oldNode->m_val);
 
             next = next->m_next;
             oldNode = oldNode->m_next;
@@ -121,9 +122,7 @@ class CSet {
             return false;
         }
 
-        CNode* newNode = new CNode();
-        newNode->m_val = _item;
-        newNode->m_next = nullptr;
+        CNode* newNode = new CNode(_item);
 
         if (m_begin != nullptr) {
             CNode* lastNode = _getLastNode();
