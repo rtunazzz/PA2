@@ -19,17 +19,74 @@ using namespace std;
 template <typename T>
 class CSet {
    private:
-    // TODO
+    struct CNode {
+        CNode* m_next;
+        T m_val;
+        const T& Value() const { return m_val; }
+    };
+
+    CNode* m_begin;
+    size_t m_size;
+
+    /**
+     * @brief Checks if values passed are equal.
+     * @param _first First value
+     * @param _second Second value
+     * @return true When they are equal
+     * @return false Otherwise (= they aren't equal)
+     */
+    bool _isEqual(const T& _first, const T& _second) const {
+        // we only have the < operator available for comparing the node values
+        // To get determine whether or not are the node values equal, we need to:
+        //  - Check if fist value is lower than the second
+        //      -> if it is, then they aren't equal
+        //  - Check if second value is lower than the first
+        //      -> if it is, then they aren't equal
+        // Then if both checks are false, the values are equal
+
+        return (!(_first < _second) && !(_second < _first));
+    }
+
+    bool _isInSet(const T& _item) const {
+        CNode* tmp = m_begin;
+        while (tmp != nullptr) {
+            if (_isEqual(tmp->Value(), _item)) {
+                return true;
+            }
+            tmp = tmp->m_next;
+        }
+        return false;
+    }
+
+    CNode* _getLastNode() const {
+        CNode* tmp = m_begin;
+        while (tmp->m_next != nullptr) {
+            tmp = tmp->m_next;
+        }
+        return tmp;
+    }
 
    public:
     /** @brief Construct a new CSet object */
-    CSet() {}
+    CSet() : m_begin(nullptr), m_size(0) {}
 
     /**
      * @brief Construct a new CSet object based off the one passed in.
      * @param _old Container to base the copy on
      */
-    CSet(const CSet& _old) {}
+    CSet(const CSet& _old) : m_begin(nullptr), m_size(0) {
+        m_size = _old.m_size;
+        CNode* oldNode = _old.m_begin;
+        CNode* next = m_begin;
+        while (oldNode != nullptr) {
+            next = new CNode();
+            next->m_val = oldNode->m_val;
+            next->m_next = oldNode->m_next;
+
+            next = next->m_next;
+            oldNode = oldNode->m_next;
+        }
+    }
 
     /**
      * @brief Overloads the = operator
@@ -37,10 +94,21 @@ class CSet {
      * @param _old CSet to base the deep copy of
      * @return CSet& Reference to the newly created CSet
      */
-    CSet& operator=(CSet _old) {}
+    CSet& operator=(CSet _old) {
+        std::swap(m_begin, _old.m_begin);
+        std::swap(m_size, _old.m_size);
+        return *this;
+    }
 
     /** @brief Destroy the CSet object */
-    ~CSet() {}
+    ~CSet() {
+        CNode* next = m_begin;
+        while (next != nullptr) {
+            CNode* tmp = next->m_next;
+            delete next;
+            next = tmp;
+        }
+    }
 
     /**
      * @brief Inserts a new item into our container.
@@ -49,6 +117,22 @@ class CSet {
      * @return false When inserting failed (= item was already in our container)
      */
     bool Insert(const T& _item) {
+        if (_isInSet(_item)) {
+            return false;
+        }
+
+        CNode* newNode = new CNode();
+        newNode->m_val = _item;
+        newNode->m_next = nullptr;
+
+        if (m_begin != nullptr) {
+            CNode* lastNode = _getLastNode();
+            lastNode->m_next = newNode;
+        } else {
+            m_begin = newNode;
+        }
+        m_size += 1;
+        return true;
     }
 
     /**
@@ -58,6 +142,25 @@ class CSet {
      * @return false When failed to remove (= item wasn't in our container)
      */
     bool Remove(const T& _item) {
+        if (m_begin == nullptr) {
+            return false;
+        }
+        CNode* curr = m_begin;
+        CNode* prev = nullptr;
+        // traverse the nodes until the end/ until we found one which values are equal
+        while ((curr != nullptr) && (!_isEqual(curr->Value(), _item))) {
+            prev = curr;
+            curr = curr->m_next;
+        }
+
+        if ((curr != nullptr) && _isEqual(curr->Value(), _item)) {
+            // we found the item to delete
+            if (prev != nullptr) prev->m_next = curr->m_next;
+            // delete curr;
+            m_size -= 1;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -66,15 +169,15 @@ class CSet {
      * @return true When item is in our container
      * @return false When item isn't in our container
      */
-    bool Contains(const T& _item) {
+    bool Contains(const T& _item) const {
+        return _isInSet(_item);
     }
 
     /**
      * @brief Returns the size of our container.
      * @return int Size of the container
      */
-    int Size() const {
-    }
+    int Size() const { return (int)m_size; }
 };
 
 #ifndef __PROGTEST__
