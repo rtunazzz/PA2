@@ -23,7 +23,13 @@ class CNode {
     T m_val;
     const T& Value() const { return m_val; }
     CNode() = delete;
-    CNode<T>(const T& val) : m_next(nullptr), m_val(val) {}
+    CNode<T>(const T& _val) : m_next(nullptr), m_val(_val) {}
+    CNode<T>(const CNode<T>& _other) : m_next(_other.m_next), m_val(_other.m_val) {}
+    CNode<T>& operator=(CNode<T> _other) {
+        std::swap(m_next, _other.m_next);
+        std::swap(m_val, _other.m_val);
+        return *this;
+    }
 };
 
 template <typename T>
@@ -51,20 +57,16 @@ class CSet {
         return (!(_first < _second) && !(_second < _first));
     }
 
+    /**
+     * @brief Finds the last node.
+     * @return CNode<T>* Pointer to the last node.
+     */
     CNode<T>* _getLastNode() const {
         CNode<T>* tmp = m_begin;
         while (tmp->m_next != nullptr) {
             tmp = tmp->m_next;
         }
         return tmp;
-    }
-
-    void _print() {
-        CNode<T>* tmp = m_begin;
-        while (tmp != nullptr) {
-            cout << tmp->Value() << " -> ";
-            tmp = tmp->m_next;
-        }
     }
 
    public:
@@ -75,10 +77,9 @@ class CSet {
      * @brief Construct a new CSet object based off the one passed in.
      * @param _old Container to base the copy on
      */
-    CSet(const CSet<T>& _old) : m_begin(nullptr), m_size(0) {
-        m_size = _old.m_size;
+    CSet(const CSet<T>& _old) : m_begin(new CNode<T>(_old.m_begin->m_val)), m_size(_old.m_size) {
         CNode<T>* oldNode = _old.m_begin;
-        CNode<T>* next = m_begin;
+        CNode<T>* next = m_begin->m_next;
         while (oldNode != nullptr) {
             next = new CNode<T>(oldNode->m_val);
 
@@ -139,52 +140,28 @@ class CSet {
      * @return false When failed to remove (= item wasn't in our container)
      */
     bool Remove(const T& _item) {
-        cout << "=======================================================================================" << endl;
-        cout << " - Removing: " << _item << endl;
-        cout << "============================= BEFORE REMOVE: =============================" << endl;
-        _print();
-        cout << endl;
         if (m_begin == nullptr) {
-            cout << "Returning false" << endl;
             return false;
         }
         CNode<T>* curr = m_begin;
         CNode<T>* prev = nullptr;
         // traverse the nodes until the end/ until we found one which values are equal
-        while ((curr != nullptr)) {
-            if (_isEqual(curr->Value(), _item)) {
-                break;
-            }
+        while ((curr != nullptr) && !_isEqual(curr->Value(), _item)) {
             prev = curr;
             curr = curr->m_next;
         }
+
         if ((curr != nullptr) && _isEqual(curr->Value(), _item)) {
-            cout << "Deleting: " << curr->Value() << endl;
             // we found the item to delete
             if (prev != nullptr) {
                 prev->m_next = curr->m_next;
-                cout << "prev->m_next is: " << prev->m_next->m_val << endl;
             } else {
-                curr = curr->m_next;
-                if (curr == nullptr) {
-                    cout << "curr is: "
-                         << "null pointer" << endl;
-                } else {
-                    cout << "curr is: " << curr->m_val << endl;
-                }
+                m_begin = curr->m_next;
             }
-            // delete curr;
+            delete curr;
             m_size -= 1;
-
-            cout << "============================= AFTER REMOVE: ==============================" << endl;
-            cout << "m_begin is: " << m_begin->m_val << endl;
-            _print();
-            cout << endl;
-
-            cout << "Returning true" << endl;
             return true;
         }
-        cout << "Returning false" << endl;
         return false;
     }
 
@@ -320,16 +297,78 @@ struct CSetTester {
         assert(x0.Remove("Jerabek Michal"));
         assert(!x0.Contains("Jerabek Michal"));
     }
+
+    static void test7() {
+        CSet<string> x0;
+        assert(x0.Insert("Jerabek Michal"));
+        assert(x0.Insert("Pavlik Ales"));
+        assert(x0.Insert("Dusek Zikmund"));
+        assert(x0.Size() == 3);
+        assert(x0.Contains("Dusek Zikmund"));
+        assert(!x0.Contains("Pavlik Jan"));
+        assert(x0.Remove("Jerabek Michal"));
+        assert(!x0.Contains("Jerabek Michal"));
+        assert(!x0.Remove("Pavlik Jan"));
+        CSet<string> x1(x0);
+        assert(x0.Insert("Vodickova Saskie"));
+        assert(x0.Size() == 3);
+        assert(x1.Size() == 2);
+        assert(x0.Contains("Vodickova Saskie"));
+        assert(!x1.Contains("Vodickova Saskie"));
+        assert(!x0.Contains("Kadlecova Kvetslava"));
+    }
+
+    static void test8() {
+        CSet<MyInt> x0;
+        assert(x0.Insert(MyInt(4)));
+        assert(x0.Insert(MyInt(8)));
+        assert(x0.Insert(MyInt(1)));
+        assert(x0.Size() == 3);
+        assert(x0.Contains(MyInt(4)));
+        assert(!x0.Contains(MyInt(5)));
+        assert(!x0.Remove(MyInt(5)));
+        CSet<MyInt> x1(x0);
+        assert(x0.Remove(MyInt(4)));
+        assert(!x0.Contains(MyInt(4)));
+        assert(x1.Contains(MyInt(4)));
+        assert(x0.Size() == 2);
+        assert(x1.Size() == 3);
+        assert(x0.Remove(MyInt(1)));
+        assert(x0.Size() == 1);
+        assert(x1.Size() == 3);
+    }
+
+    static void test9() {
+        CSet<MyInt> x0;
+        assert(x0.Insert(MyInt(4)));
+        assert(x0.Insert(MyInt(8)));
+        assert(x0.Insert(MyInt(1)));
+        assert(x0.Size() == 3);
+        assert(x0.Contains(MyInt(4)));
+        assert(!x0.Contains(MyInt(5)));
+        assert(!x0.Remove(MyInt(5)));
+        CSet<MyInt> x1 = x0;
+        assert(x0.Remove(MyInt(4)));
+        assert(!x0.Contains(MyInt(4)));
+        assert(x1.Contains(MyInt(4)));
+        assert(x0.Size() == 2);
+        assert(x1.Size() == 3);
+        assert(x0.Remove(MyInt(1)));
+        assert(x0.Size() == 1);
+        assert(x1.Size() == 3);
+    }
 };
 
 int main() {
-    // TODO pridat vlastni testy (~28:00)
-    CSetTester::test6();
     CSetTester::test0();
     CSetTester::test1();
     CSetTester::test2();
     CSetTester::test4();
     CSetTester::test5();
+    CSetTester::test6();
+    CSetTester::test7();
+    CSetTester::test8();
+    CSetTester::test9();
     return 0;
 }
 #endif /* __PROGTEST__ */
