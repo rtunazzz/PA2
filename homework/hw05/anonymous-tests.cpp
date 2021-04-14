@@ -205,6 +205,7 @@ class CExam {
     bool Load(istream& cardMap) {
         // TODO do i have to load students into TMP and drop them when one in the stream fails?
 
+        vector<CStudent*> student_buffer;
         string line;
         // read stream line by line
         while (getline(cardMap, line)) {
@@ -213,6 +214,9 @@ class CExam {
             if (m_students_by_id.count(student->Id()) > 0) {
                 // cout << "Student ID " << student->Id() << " is already present in this exam!";
                 delete student;
+                for (auto otherStudent : student_buffer) {
+                    delete otherStudent;
+                }
                 return false;
             }
 
@@ -222,13 +226,19 @@ class CExam {
                 if (m_students_by_card.count(it) > 0) {
                     // cout << "Student card " << it << " is already present in this exam!";
                     delete student;
+                    for (auto otherStudent : student_buffer) {
+                        delete otherStudent;
+                    }
                     return false;
                 }
             }
-            cout << "Loaded student " << student->Name() << " with the ID: " << student->Id() << endl;
+            // cout << "Loaded student " << student->Name() << " with the ID: " << student->Id() << endl;
+            student_buffer.push_back(student);
+        }
+        for (const auto& student : student_buffer) {
             m_students.push_back(student);
             m_students_by_id.insert(make_pair(student->Id(), student));
-            for (auto const& it : cards) {
+            for (auto const& it : student->Cards()) {
                 m_students_by_card.insert(make_pair(it, student));
             }
         }
@@ -270,8 +280,8 @@ class CExam {
             return false;
         }
         if (it->second->Assess(test, result)) {
-            cout << "[" << test << "]"
-                 << " Assessed Student with ID " << studentID << " for " << result << endl;
+            // cout << "[" << test << "]"
+            //      << " Assessed Student with ID " << studentID << " for " << result << endl;
             m_assessed_students_by_test.insert(make_pair(test, it->second));
             return true;
         } else {
@@ -306,18 +316,19 @@ class CExam {
                 result_list.push_back(it.second->Result(testName));
             }
         }
+
         if (sortBy == SORT_NAME) {
             result_list.sort([](const CResult& lhs, const CResult& rhs) { return lhs.m_Name < rhs.m_Name; });
-            cout << "Sorted by name:" << endl;
+            // cout << "Sorted by name:" << endl;
         } else if (sortBy == SORT_RESULT) {
             result_list.sort([](const CResult& lhs, const CResult& rhs) { return lhs.m_Result > rhs.m_Result; });
-            cout << "Sorted by result:" << endl;
+            // cout << "Sorted by result:" << endl;
         } else {
-            cout << "Sorted by time assessed:" << endl;
+            // cout << "Sorted by time assessed:" << endl;
         }
-        for (const auto& res : result_list) {
-            cout << "\t" << res.m_StudentID << ", " << res.m_Name << ", " << res.m_Result << endl;
-        }
+        // for (const auto& res : result_list) {
+        //     cout << "\t" << res.m_StudentID << ", " << res.m_Name << ", " << res.m_Result << endl;
+        // }
         return result_list;
     }
 
