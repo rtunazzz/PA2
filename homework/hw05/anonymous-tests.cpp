@@ -33,16 +33,17 @@ class CStudent {
     unsigned int m_id;
     string m_fullname;
     vector<string> m_cards;
-    CResult* m_result;
+    map<string, CResult*> m_tests;
 
    public:
     CStudent() = delete;
-    CStudent(const string& line) : m_result(nullptr) {
-        istringstream s(line);
+    CStudent(const string& line) {
+        // cout << "[CSTUDENT] Adding: " << line << endl;
+        istringstream line_stream(line);
         string field;
         int index = 0;  // save index so we know which field we're reading
         // process the line
-        while (getline(s, field, ':')) {
+        while (getline(line_stream, field, ':')) {
             // process the field
             switch (index) {
                 case 0: {
@@ -53,17 +54,28 @@ class CStudent {
                         cout << "Failed to parse Student ID! '" << *check << "' is not an unsinged int.";
                     }
                     index += 1;
+                    // cout << "[CSTUDENT] Added ID: " << m_id << endl;
                     break;
                 }
                 case 1: {
                     // we're parsing the full name
                     m_fullname = field;
                     index += 1;
+                    // cout << "[CSTUDENT] Added name: " << m_fullname << endl;
                     break;
                 }
-                default: {
-                    // we're parsing card id
-                    m_cards.push_back(field);
+                case 2: {
+                    // we're parsing card ids, which is a list separated by commas
+                    istringstream field_stream(field);
+                    string card;
+                    while (getline(field_stream, card, ',')) {
+                        // remove spaces
+                        card.erase(remove_if(card.begin(), card.end(), ::isspace), card.end());
+
+                        // add it
+                        m_cards.push_back(card);
+                        // cout << "[CSTUDENT] Added card: " << card << endl;
+                    }
                     index += 1;
                     break;
                 }
@@ -74,6 +86,16 @@ class CStudent {
     const unsigned int Id() const { return m_id; }
     const string& Name() const { return m_fullname; }
     const vector<string>& Cards() const { return m_cards; }
+
+    bool Register(const string& test) {
+        // check if student isn't registered for this test already
+        if (m_tests.count(test) > 0) {
+            cout << m_id << "is already registered for " << test << endl;
+            return false;
+        }
+        m_tests.insert(make_pair(test, nullptr));
+        return true;
+    }
 
     void Print() {
         cout << m_fullname << " (" << m_id << ") ";
@@ -100,6 +122,8 @@ class CExam {
      * Time is the time when the student's result was assessed
      */
     map<time_t, CStudent*> m_students_by_assess;
+
+    map<string, CStudent*> m_tests;
 
    public:
     static const int SORT_NONE = 0;
@@ -149,7 +173,16 @@ class CExam {
         return true;
     }
 
-    bool Register(const string& cardID, const string& test) { return true; }
+    bool Register(const string& cardID, const string& test) {
+        // search student up by his cardID
+        auto it = m_students_by_card.find(cardID);
+        if (it == m_students_by_card.end()) {
+            // student wasn't found = card isn't recognized
+            cout << "Student card " << cardID << " was not found for the test " << test << endl;
+            return false;
+        }
+        return it->second->Register(test);
+    }
 
     bool Assess(unsigned int studentID, const string& test, int result) { return true; }
 
