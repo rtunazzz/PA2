@@ -91,6 +91,12 @@ class CStudent {
     const string& Name() const { return m_fullname; }
     const vector<string>& Cards() const { return m_cards; }
 
+    /**
+     * @brief Registers student for the test specified.
+     * @param test Test to register for
+     * @return true When successfully registered
+     * @return false When failed to register
+     */
     bool Register(const string& test) {
         // check if student isn't registered for this test already
         if (m_tests.count(test) > 0) {
@@ -101,6 +107,13 @@ class CStudent {
         return true;
     }
 
+    /**
+     * @brief Assesses the student the result provided from the test specified.
+     * @param test Test to which to assess the result
+     * @param result Result to be assessed
+     * @return true When successfully assesses the result for the test specified
+     * @return false When failed to assess the result for the test specified
+     */
     bool Assess(const string& test, int result) {
         auto it = m_tests.find(test);
         if (it == m_tests.end()) {
@@ -115,6 +128,9 @@ class CStudent {
         return true;
     }
 
+    /**
+     * @brief Utility function for printing the student details.
+     */
     void Print() {
         cout << m_fullname << " (" << m_id << ") ";
         cout << "Cards: [";
@@ -157,6 +173,13 @@ class CExam {
             delete it;
         }
     }
+
+    /**
+     * @brief Loads students from the stream provided.
+     * @param cardMap Stream to add students from
+     * @return true When successfully loaded students
+     * @return false When failed to load students
+     */
     bool Load(istream& cardMap) {
         // TODO do i have to load students into TMP and drop them when one in the stream fails?
 
@@ -189,6 +212,13 @@ class CExam {
         return true;
     }
 
+    /**
+     * @brief Registers student specified by the CardID for the test specified.
+     * @param cardID Student identifies
+     * @param test Test to register for
+     * @return true When successfully registered
+     * @return false When failed to register
+     */
     bool Register(const string& cardID, const string& test) {
         // search student up by his cardID
         auto it = m_students_by_card.find(cardID);
@@ -200,6 +230,14 @@ class CExam {
         return it->second->Register(test);
     }
 
+    /**
+     * @brief Assesses the student specified by his studentID the result provided for the test specified.
+     * @param studentID Identification of the student
+     * @param test Test to which to assess the result
+     * @param result Result to be assessed
+     * @return true When successfully assesses the result for the test specified
+     * @return false When failed to assess the result for the test specified
+     */
     bool Assess(unsigned int studentID, const string& test, int result) {
         // find the student specified by his ID
         auto it = m_students_by_id.find(studentID);
