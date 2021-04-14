@@ -82,7 +82,11 @@ class CStudent {
             }
         }
     }
-
+    ~CStudent() {
+        for (auto it : m_tests) {
+            delete it.second;
+        }
+    }
     const unsigned int Id() const { return m_id; }
     const string& Name() const { return m_fullname; }
     const vector<string>& Cards() const { return m_cards; }
@@ -90,10 +94,24 @@ class CStudent {
     bool Register(const string& test) {
         // check if student isn't registered for this test already
         if (m_tests.count(test) > 0) {
-            cout << m_id << "is already registered for " << test << endl;
+            cout << m_id << " is already registered for test " << test << endl;
             return false;
         }
         m_tests.insert(make_pair(test, nullptr));
+        return true;
+    }
+
+    bool Assess(const string& test, int result) {
+        auto it = m_tests.find(test);
+        if (it == m_tests.end()) {
+            cout << m_id << " is NOT registered for test " << test << endl;
+            return false;
+        }
+        if (it->second != nullptr) {
+            cout << m_id << " already has a grade from test " << test << endl;
+            return false;
+        }
+        it->second = new CResult(m_fullname, m_id, test, result);
         return true;
     }
 
@@ -122,8 +140,6 @@ class CExam {
      * Time is the time when the student's result was assessed
      */
     map<time_t, CStudent*> m_students_by_assess;
-
-    map<string, CStudent*> m_tests;
 
    public:
     static const int SORT_NONE = 0;
@@ -184,7 +200,16 @@ class CExam {
         return it->second->Register(test);
     }
 
-    bool Assess(unsigned int studentID, const string& test, int result) { return true; }
+    bool Assess(unsigned int studentID, const string& test, int result) {
+        // find the student specified by his ID
+        auto it = m_students_by_id.find(studentID);
+        if (it == m_students_by_id.end()) {
+            // student wasn't found = card isn't recognized
+            cout << "Student with ID " << studentID << " was not found!" << endl;
+            return false;
+        }
+        return it->second->Assess(test, result);
+    }
 
     list<CResult> ListTest(const string& testName, int sortBy) const {
         list<CResult> l;
