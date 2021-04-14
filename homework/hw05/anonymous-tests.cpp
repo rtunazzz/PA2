@@ -203,8 +203,6 @@ class CExam {
      * @return false When failed to load students
      */
     bool Load(istream& cardMap) {
-        // TODO do i have to load students into TMP and drop them when one in the stream fails?
-
         vector<CStudent*> student_buffer;
         string line;
         // read stream line by line
@@ -300,7 +298,7 @@ class CExam {
 
         if (sortBy == SORT_ID) {
             for (const auto& it : m_students_by_id) {
-                if (it.second->WroteTest(testName)) {
+                if (it.second->WroteTest(testName) && it.second->IsTestAssessed(testName)) {
                     result_list.push_back(it.second->Result(testName));
                 }
             }
@@ -415,7 +413,7 @@ int main(void) {
 
     assert(m.Register("ui2345234sdf", "PA2 - #3"));
     assert(m.ListMissing("PA2 - #3") == (set<unsigned int>{555, 123456}));
-
+    CExam m2;
     return 0;
 }
 #endif /* __PROGTEST__ */
