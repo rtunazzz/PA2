@@ -20,11 +20,12 @@ template <typename T>
 class CNode {
    public:
     CNode<T>* m_next;
-    T m_val;
-    const T& Value() const { return m_val; }
+    T* m_val;
+    const T& Value() const { return *m_val; }
     CNode() = delete;
-    CNode<T>(const T& _val) : m_next(nullptr), m_val(_val) {}
-    CNode<T>(const CNode<T>& _other) : m_next(_other.m_next), m_val(_other.m_val) {}
+    CNode<T>(const T& _val) : m_next(nullptr), m_val(new T(_val)) {}
+    ~CNode() { delete m_val; }
+    CNode<T>(const CNode<T>& _other) : m_next(_other.m_next), m_val(new T(_other.m_val)) {}
     CNode<T>& operator=(CNode<T> _other) {
         std::swap(m_next, _other.m_next);
         std::swap(m_val, _other.m_val);
@@ -77,14 +78,15 @@ class CSet {
      * @brief Construct a new CSet object based off the one passed in.
      * @param _old Container to base the copy on
      */
-    CSet(const CSet<T>& _old) : m_begin(new CNode<T>(_old.m_begin->m_val)), m_size(_old.m_size) {
-        CNode<T>* oldNode = _old.m_begin;
-        CNode<T>* next = m_begin->m_next;
-        while (oldNode != nullptr) {
-            next = new CNode<T>(oldNode->m_val);
+    CSet(const CSet<T>& _old) : m_begin(new CNode<T>(*(_old.m_begin->m_val))), m_size(_old.m_size) {
+        // m_begin je deep copy _old.m_begin
+        CNode<T>* oldNext = _old.m_begin->m_next;
+        CNode<T>* curr = m_begin;
+        while (oldNext != nullptr) {
+            curr->m_next = new CNode<T>(*(oldNext->m_val));
 
-            next = next->m_next;
-            oldNode = oldNode->m_next;
+            curr = curr->m_next;
+            oldNext = oldNext->m_next;
         }
     }
 
