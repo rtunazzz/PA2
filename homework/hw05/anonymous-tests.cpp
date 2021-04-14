@@ -91,6 +91,32 @@ class CStudent {
     const string& Name() const { return m_fullname; }
     const vector<string>& Cards() const { return m_cards; }
 
+    bool WroteTest(const string& test) const {
+        auto it = m_tests.find(test);
+        if (it == m_tests.end()) {
+            // cout << m_id << " does not have a test " << test << endl;
+            return false;
+        }
+        return true;
+    }
+
+    bool IsTestAssessed(const string& test) const {
+        auto it = m_tests.find(test);
+        if (it == m_tests.end()) {
+            // cout << m_id << " does not have a test " << test << endl;
+            return false;
+        }
+        return (it->second != nullptr);
+    }
+
+    CResult Result(const string& test) const {
+        auto it = m_tests.find(test);
+        if (it == m_tests.end()) {
+            // cout << m_id << " does not have a test " << test << endl;
+        }
+        return *it->second;
+    }
+
     /**
      * @brief Registers student for the test specified.
      * @param test Test to register for
@@ -100,7 +126,7 @@ class CStudent {
     bool Register(const string& test) {
         // check if student isn't registered for this test already
         if (m_tests.count(test) > 0) {
-            cout << m_id << " is already registered for test " << test << endl;
+            // cout << m_id << " is already registered for test " << test << endl;
             return false;
         }
         m_tests.insert(make_pair(test, nullptr));
@@ -117,11 +143,11 @@ class CStudent {
     bool Assess(const string& test, int result) {
         auto it = m_tests.find(test);
         if (it == m_tests.end()) {
-            cout << m_id << " is NOT registered for test " << test << endl;
+            // cout << m_id << " is NOT registered for test " << test << endl;
             return false;
         }
         if (it->second != nullptr) {
-            cout << m_id << " already has a grade from test " << test << endl;
+            // cout << m_id << " already has a grade from test " << test << endl;
             return false;
         }
         it->second = new CResult(m_fullname, m_id, test, result);
@@ -151,11 +177,7 @@ class CExam {
     /** @brief Map with cards as keys and pointer to the students the card belongs as the value */
     map<string, CStudent*> m_students_by_card;
 
-    /**
-     * @brief Container to keep data about the current exam results.
-     * Time is the time when the student's result was assessed
-     */
-    map<time_t, CStudent*> m_students_by_assess;
+    multimap<string, CStudent*> m_assessed_students_by_test;
 
    public:
     static const int SORT_NONE = 0;
@@ -189,7 +211,7 @@ class CExam {
             CStudent* student = new CStudent(line);
             // check if students id isn't already present
             if (m_students_by_id.count(student->Id()) > 0) {
-                cout << "Student ID " << student->Id() << " is already present in this exam!";
+                // cout << "Student ID " << student->Id() << " is already present in this exam!";
                 delete student;
                 return false;
             }
@@ -198,11 +220,12 @@ class CExam {
             auto cards = student->Cards();
             for (auto const& it : cards) {
                 if (m_students_by_card.count(it) > 0) {
-                    cout << "Student card " << it << " is already present in this exam!";
+                    // cout << "Student card " << it << " is already present in this exam!";
                     delete student;
                     return false;
                 }
             }
+            cout << "Loaded student " << student->Name() << " with the ID: " << student->Id() << endl;
             m_students.push_back(student);
             m_students_by_id.insert(make_pair(student->Id(), student));
             for (auto const& it : cards) {
@@ -224,7 +247,7 @@ class CExam {
         auto it = m_students_by_card.find(cardID);
         if (it == m_students_by_card.end()) {
             // student wasn't found = card isn't recognized
-            cout << "Student card " << cardID << " was not found for the test " << test << endl;
+            // cout << "Student card " << cardID << " was not found for the test " << test << endl;
             return false;
         }
         return it->second->Register(test);
@@ -243,19 +266,69 @@ class CExam {
         auto it = m_students_by_id.find(studentID);
         if (it == m_students_by_id.end()) {
             // student wasn't found = card isn't recognized
-            cout << "Student with ID " << studentID << " was not found!" << endl;
+            // cout << "Student with ID " << studentID << " was not found!" << endl;
             return false;
         }
-        return it->second->Assess(test, result);
+        if (it->second->Assess(test, result)) {
+            cout << "[" << test << "]"
+                 << " Assessed Student with ID " << studentID << " for " << result << endl;
+            m_assessed_students_by_test.insert(make_pair(test, it->second));
+            return true;
+        } else {
+            return false;
+        }
     }
 
+    /**
+     * @brief Lists and sorts results of students that took the test specified by the testName.
+     * @param testName Name of the test to list
+     * @param sortBy Based on what to sort
+     * @return list<CResult> List with the results
+     */
     list<CResult> ListTest(const string& testName, int sortBy) const {
-        list<CResult> l;
-        return l;
+        list<CResult> result_list;
+
+        if (sortBy == SORT_ID) {
+            for (const auto& it : m_students_by_id) {
+                if (it.second->WroteTest(testName)) {
+                    result_list.push_back(it.second->Result(testName));
+                }
+            }
+            return result_list;
+        }
+
+        for (const auto& it : m_assessed_students_by_test) {
+            // we gotta make sure there aren't duplicates
+            if (it.first != testName) {
+                continue;
+            }
+            if (it.second->WroteTest(testName)) {
+                result_list.push_back(it.second->Result(testName));
+            }
+        }
+        if (sortBy == SORT_NAME) {
+            result_list.sort([](const CResult& lhs, const CResult& rhs) { return lhs.m_Name < rhs.m_Name; });
+            cout << "Sorted by name:" << endl;
+        } else if (sortBy == SORT_RESULT) {
+            result_list.sort([](const CResult& lhs, const CResult& rhs) { return lhs.m_Result > rhs.m_Result; });
+            cout << "Sorted by result:" << endl;
+        } else {
+            cout << "Sorted by time assessed:" << endl;
+        }
+        for (const auto& res : result_list) {
+            cout << "\t" << res.m_StudentID << ", " << res.m_Name << ", " << res.m_Result << endl;
+        }
+        return result_list;
     }
 
     set<unsigned int> ListMissing(const string& testName) const {
         set<unsigned int> s;
+        for (const auto& it : m_students) {
+            // check if student wrote the test and if it wasnt assessed
+            if (it->WroteTest(testName) && !(it->IsTestAssessed(testName))) {
+                s.insert(it->Id());
+            }
+        }
         return s;
     }
 };
