@@ -22,27 +22,67 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
-class CRecA {
+class CRecord {
+   private:
+    string m_name;
+    string m_type;
+
    public:
-    // constructor
-    // Name ()
-    // Type ()
-    // operator <<
-    // todo
+    CRecord() = delete;
+    CRecord(const string &name, const string &type) : m_name(name), m_type(type) {}
+    virtual ~CRecord() = default;
+
+    const string &Type() const {
+        return m_type;
+    }
+
+    const string &Name() const {
+        return m_name;
+    }
+
+    virtual ostream &Print(ostream &os) const {
+        os << Name() << " " << Type();
+        return os;
+    }
+
+    /**
+     * @brief Wrapper for displaying the class in a string format
+     * @param os Stream
+     * @param r Record
+     * @return ostream& Stream passed in
+     */
+    friend ostream &operator<<(ostream &os, const CRecord &r) {
+        return r.Print(os);
+    }
 };
 
-class CRecAAAA {
+class CRecA : public CRecord {
+   private:
+    CIPv4 m_ipv4;
+
    public:
-    // constructor
-    // Name ()
-    // Type ()
-    // operator <<
-    // todo
+    CRecA() = delete;
+    CRecA(const string &name, const CIPv4 &ipv4) : CRecord(name, "A"), m_ipv4(ipv4) {}
+    virtual ostream &Print(ostream &os) const override {
+    }
 };
 
-class CRecMX {
+class CRecAAAA : public CRecord {
+   private:
+    CIPv6 m_ipv6;
+
+   public:
+    CRecAAAA() = delete;
+    CRecAAAA(const string &name, const CIPv6 &ipv6) : CRecord(name, "AAAA"), m_ipv6(ipv6) {}
+    virtual ostream &Print(ostream &os) const override {
+    }
+};
+
+class CRecMX : public CRecord {
    public:
     // constructor
+    CRecMX() = delete;
+    CRecMX(const string &name) : CRecord(name, "MX") {}
     // Name ()
     // Type ()
     // operator <<
