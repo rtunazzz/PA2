@@ -80,13 +80,10 @@ class CRecAAAA : public CRecord {
 
 class CRecMX : public CRecord {
    public:
-    // constructor
     CRecMX() = delete;
     CRecMX(const string &name) : CRecord(name, "MX") {}
-    // Name ()
-    // Type ()
-    // operator <<
-    // todo
+    virtual ostream &Print(ostream &os) const override {
+    }
 };
 
 class CZone {
