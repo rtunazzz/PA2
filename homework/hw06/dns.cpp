@@ -79,9 +79,13 @@ class CRecAAAA : public CRecord {
 };
 
 class CRecMX : public CRecord {
+   private:
+    string m_serverName;
+    int m_priority;
+
    public:
     CRecMX() = delete;
-    CRecMX(const string &name) : CRecord(name, "MX") {}
+    CRecMX(const string &name, const string &serverName, int priority) : CRecord(name, "MX"), m_serverName(serverName), m_priority(priority) {}
     virtual ostream &Print(ostream &os) const override {
     }
 };
