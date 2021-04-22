@@ -64,6 +64,34 @@ class CRecord {
     }
 };
 
+class CSearchResult {
+   private:
+    vector<CRecord *> m_data;
+
+   public:
+    int Count() const { return m_data.size(); }
+
+    const CRecord &operator[](int index) const {
+        // not needed since `at` will throw an out_of_range exception on it's own
+        // if (index >= Count()) {
+        //     throw std::out_of_range("Index is out of range - index >= Count()");
+        // }
+        return *m_data.at(index);
+    }
+
+    void Add(CRecord *rec) {
+        m_data.push_back(rec);
+    }
+
+    friend ostream &operator<<(ostream &os, const CSearchResult &s) {
+        for (auto const &it : s.m_data) {
+            it->Print(os);
+            os << endl;
+        }
+        return os;
+    }
+};
+
 class CRecA : public CRecord {
    private:
     CIPv4 m_ipv4;
@@ -151,7 +179,6 @@ class CZone {
     vector<CRecord *> m_data;
 
    public:
-    // constructor(s)
     CZone(const string &zoneName) : m_name(zoneName) {}
     ~CZone() {
         for (const auto &it : m_data) {
@@ -160,9 +187,7 @@ class CZone {
     }
 
     const string &Name() const { return m_name; }
-    // destructor (if needed)
-    // operator = (if needed)
-    // Add ()
+
     bool Add(const CRecord &rec) {
         // check if there's a rec already in the m_data;
         auto it = find_if(m_data.begin(), m_data.end(), [&rec](const CRecord *other) { return other->isEqual(rec); });
@@ -178,7 +203,16 @@ class CZone {
 
     // }
     // Search ()
-    // operator <<
+    CSearchResult Search(const string &recordName) const {
+        CSearchResult result;
+        for (const auto &it : m_data) {
+            if (it->Name() == recordName) {
+                result.Add(it);
+            }
+        }
+        return result;
+    }
+
     friend ostream &operator<<(ostream &os, const CZone &z) {
         os << z.Name() << endl;
         for (const auto &it : z.m_data) {
@@ -219,13 +253,13 @@ int main(void) {
            " +- progtest AAAA 2001:718:2:2902:1:2:3:4\n"
            " +- courses MX 0 relay.fit.cvut.cz.\n"
            " \\- courses MX 10 relay2.fit.cvut.cz.\n");
-    // assert(z0.Search("progtest").Count() == 3);
-    // oss.str("");
-    // oss << z0.Search("progtest");
-    // assert(oss.str() ==
-    //        "progtest A 147.32.232.142\n"
-    //        "progtest AAAA 2001:718:2:2902:0:1:2:3\n"
-    //        "progtest AAAA 2001:718:2:2902:1:2:3:4\n");
+    assert(z0.Search("progtest").Count() == 3);
+    oss.str("");
+    oss << z0.Search("progtest");
+    assert(oss.str() ==
+           "progtest A 147.32.232.142\n"
+           "progtest AAAA 2001:718:2:2902:0:1:2:3\n"
+           "progtest AAAA 2001:718:2:2902:1:2:3:4\n");
     // assert(z0.Del(CRecA("courses", CIPv4("147.32.232.160"))) == true);
     // assert(z0.Add(CRecA("courses", CIPv4("147.32.232.122"))) == true);
     // oss.str("");
