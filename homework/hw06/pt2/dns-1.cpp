@@ -111,7 +111,7 @@ class CRecA : public CRecord {
     bool isEqual(const CRecord &other) const override {
         const CRecA *rec = dynamic_cast<const CRecA *>(&other);
         if (rec == nullptr) {
-            return false;
+            return CRecord::isEqual(other);
         }
         return (CRecord::isEqual(other) && IPv4() == rec->IPv4());
     }
@@ -137,7 +137,7 @@ class CRecAAAA : public CRecord {
     bool isEqual(const CRecord &other) const override {
         const CRecAAAA *rec = dynamic_cast<const CRecAAAA *>(&other);
         if (rec == nullptr) {
-            return false;
+            return CRecord::isEqual(other);
         }
         return (CRecord::isEqual(other) && IPv6() == rec->IPv6());
     }
@@ -165,7 +165,7 @@ class CRecMX : public CRecord {
     bool isEqual(const CRecord &other) const override {
         const CRecMX *rec = dynamic_cast<const CRecMX *>(&other);
         if (rec == nullptr) {
-            return false;
+            return CRecord::isEqual(other);
         }
         return (CRecord::isEqual(other) && ServerName() == rec->ServerName() && Priority() == rec->Priority());
     }

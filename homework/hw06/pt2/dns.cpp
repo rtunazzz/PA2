@@ -45,6 +45,9 @@ class CRecord {
     }
 
     virtual bool isEqual(const CRecord &other) const {
+        if (other.Type() == "CNAME" || other.Type() == "CZONE" || Type() == "CNAME" || Type() == "CZONE") {
+            return other.Name() == Name();
+        }
         return (other.Type() == Type() && other.Name() == Name());
     }
 
@@ -73,6 +76,14 @@ class CSearchResult {
     int Count() const { return m_data.size(); }
 
     const CRecord &operator[](int index) const {
+        // not needed since `at` will throw an out_of_range exception on it's own
+        // if (index >= Count()) {
+        //     throw std::out_of_range("Index is out of range - index >= Count()");
+        // }
+        return *m_data.at(index);
+    }
+
+    CRecord &operator[](int index) {
         // not needed since `at` will throw an out_of_range exception on it's own
         // if (index >= Count()) {
         //     throw std::out_of_range("Index is out of range - index >= Count()");
@@ -111,7 +122,7 @@ class CRecA : public CRecord {
     bool isEqual(const CRecord &other) const override {
         const CRecA *rec = dynamic_cast<const CRecA *>(&other);
         if (rec == nullptr) {
-            return false;
+            return CRecord::isEqual(other);
         }
         return (CRecord::isEqual(other) && IPv4() == rec->IPv4());
     }
@@ -137,7 +148,7 @@ class CRecAAAA : public CRecord {
     bool isEqual(const CRecord &other) const override {
         const CRecAAAA *rec = dynamic_cast<const CRecAAAA *>(&other);
         if (rec == nullptr) {
-            return false;
+            return CRecord::isEqual(other);
         }
         return (CRecord::isEqual(other) && IPv6() == rec->IPv6());
     }
@@ -165,7 +176,7 @@ class CRecMX : public CRecord {
     bool isEqual(const CRecord &other) const override {
         const CRecMX *rec = dynamic_cast<const CRecMX *>(&other);
         if (rec == nullptr) {
-            return false;
+            return CRecord::isEqual(other);
         }
         return (CRecord::isEqual(other) && ServerName() == rec->ServerName() && Priority() == rec->Priority());
     }
@@ -189,11 +200,8 @@ class CRecCNAME : public CRecord {
     const string &Reference() const { return m_refName; }
 
     bool isEqual(const CRecord &other) const override {
-        const CRecCNAME *rec = dynamic_cast<const CRecCNAME *>(&other);
-        if (rec == nullptr) {
-            return false;
-        }
-        return CRecord::isEqual(other) && rec->Reference() == Reference();
+        // check just the name since there can't be the same name for a CName and any other record
+        return other.Name() == Name();
     }
 
     ostream &Print(ostream &os) const override {
@@ -212,15 +220,12 @@ class CRecSPF : public CRecord {
         return new CRecSPF(*this);
     }
 
-    void Add(const string &address) {
+    CRecSPF &Add(const string &address) {
         m_addresses.push_back(address);
+        return *this;
     }
 
     bool isEqual(const CRecord &other) const override {
-        const CRecSPF *rec = dynamic_cast<const CRecSPF *>(&other);
-        if (rec == nullptr) {
-            return false;
-        }
         return CRecord::isEqual(other);
     }
 
@@ -232,22 +237,68 @@ class CRecSPF : public CRecord {
             }
             os << " " << it;
         }
-        return os << endl;
+        return os;
     }
 };
 
 class CZone : public CRecord {
+   private:
+    vector<shared_ptr<CRecord>> m_data;
+
    public:
-    // constructor(s)
-    // destructor (if needed)
-    // operator = (if needed)
-    // Name ()
-    // Type ()
-    // Add ()
-    // Del ()
-    // Search ()
-    // operator <<
-    // todo
+    CZone(const string &zoneName) : CRecord(zoneName, "CZONE") {}
+
+    bool Add(const CRecord &rec) {
+        // check if there's a rec already in the m_data;
+        auto it = find_if(m_data.begin(), m_data.end(), [&rec](const shared_ptr<CRecord> &other) { return other->isEqual(rec); });
+        if (it != m_data.end()) {
+            return false;
+        }
+        m_data.push_back(shared_ptr<CRecord>(rec.Clone()));
+        return true;
+    }
+
+    bool Del(const CRecord &rec) {
+        auto it = find_if(m_data.begin(), m_data.end(), [&rec](const shared_ptr<CRecord> &other) { return other->isEqual(rec); });
+        if (it == m_data.end()) {
+            return false;
+        }
+        m_data.erase(it);
+        return true;
+    }
+
+    CSearchResult Search(const string &recordName) const {
+        CSearchResult result;
+        for (const auto &it : m_data) {
+            if (it->Name() == recordName) {
+                result.Add(it);
+            }
+        }
+        return result;
+    }
+
+    bool isEqual(const CRecord &other) const override {
+        // check just the name since there can't be the same name for a CZone and any other record
+        return other.Name() == Name();
+    }
+
+    ostream &Print(ostream &os) const override {
+        return os << Name();
+    }
+
+    friend ostream &operator<<(ostream &os, const CZone &z) {
+        os << z.Name() << endl;
+        for (const auto &it : z.m_data) {
+            if (it == z.m_data.end()[-1]) {
+                os << " \\- ";
+            } else {
+                os << " +- ";
+            }
+            it->Print(os);
+            os << endl;
+        }
+        return os;
+    }
 };
 #ifndef __PROGTEST__
 int main(void) {
@@ -370,6 +421,7 @@ int main(void) {
     assert(z10.Add(CRecA("test", CIPv4("147.32.232.232"))) == false);
     oss.str("");
     oss << z10;
+    cout << z10;
     assert(oss.str() ==
            "fit\n"
            " +- progtest AAAA 2001:718:2:2902:0:1:2:3\n"
@@ -411,6 +463,7 @@ int main(void) {
     assert(z20.Add(z21) == true);
     assert(z23.Add(CRecA("www", CIPv4("147.32.90.1"))) == true);
     oss.str("");
+    cout << z20;
     oss << z20;
     assert(oss.str() ==
            "<ROOT ZONE>\n"
