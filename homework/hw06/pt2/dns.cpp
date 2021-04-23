@@ -176,22 +176,64 @@ class CRecMX : public CRecord {
 };
 
 class CRecCNAME : public CRecord {
+   private:
+    string m_refName;
+
    public:
-    // constructor
-    // Name ()
-    // Type ()
-    // operator <<
-    // todo
+    CRecCNAME() = delete;
+    CRecCNAME(const string &name, const string &referenceName) : CRecord(name, "CNAME"), m_refName(referenceName) {}
+    CRecord *Clone() const override {
+        return new CRecCNAME(*this);
+    }
+
+    const string &Reference() const { return m_refName; }
+
+    bool isEqual(const CRecord &other) const override {
+        const CRecCNAME *rec = dynamic_cast<const CRecCNAME *>(&other);
+        if (rec == nullptr) {
+            return false;
+        }
+        return CRecord::isEqual(other) && rec->Reference() == Reference();
+    }
+
+    ostream &Print(ostream &os) const override {
+        return os << Name() << " " << Type() << " " << Reference();
+    }
 };
 
 class CRecSPF : public CRecord {
+   private:
+    vector<string> m_addresses;
+
    public:
-    // constructor
-    // Name ()
-    // Type ()
-    // Add ()
-    // operator <<
-    // todo
+    CRecSPF() = delete;
+    CRecSPF(const string &name) : CRecord(name, "SPF") {}
+    CRecord *Clone() const override {
+        return new CRecSPF(*this);
+    }
+
+    void Add(const string &address) {
+        m_addresses.push_back(address);
+    }
+
+    bool isEqual(const CRecord &other) const override {
+        const CRecSPF *rec = dynamic_cast<const CRecSPF *>(&other);
+        if (rec == nullptr) {
+            return false;
+        }
+        return CRecord::isEqual(other);
+    }
+
+    ostream &Print(ostream &os) const override {
+        os << Name() << " " << Type();
+        for (auto const &it : m_addresses) {
+            if (it != *m_addresses.begin()) {
+                os << ",";
+            }
+            os << " " << it;
+        }
+        return os << endl;
+    }
 };
 
 class CZone : public CRecord {
