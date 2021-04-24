@@ -51,7 +51,7 @@ class CRecord {
         return (other.Type() == Type() && other.Name() == Name());
     }
 
-    virtual ostream &Print(ostream &os) const {
+    virtual ostream &Print(ostream &os, const string &padding, bool isLast) const {
         os << Name() << " " << Type();
         return os;
     }
@@ -63,7 +63,7 @@ class CRecord {
      * @return ostream& Stream passed in
      */
     friend ostream &operator<<(ostream &os, const CRecord &r) {
-        return r.Print(os);
+        return r.Print(os, "", true);
     }
 };
 
@@ -98,7 +98,7 @@ class CSearchResult {
 
     friend ostream &operator<<(ostream &os, const CSearchResult &s) {
         for (auto const &it : s.m_data) {
-            it->Print(os);
+            it->Print(os, "", false);
             os << endl;
         }
         return os;
@@ -127,7 +127,7 @@ class CRecA : public CRecord {
         return (CRecord::isEqual(other) && IPv4() == rec->IPv4());
     }
 
-    ostream &Print(ostream &os) const override {
+    ostream &Print(ostream &os, const string &padding, bool isLast) const override {
         return os << Name() << " " << Type() << " " << IPv4();
     }
 };
@@ -153,7 +153,7 @@ class CRecAAAA : public CRecord {
         return (CRecord::isEqual(other) && IPv6() == rec->IPv6());
     }
 
-    ostream &Print(ostream &os) const override {
+    ostream &Print(ostream &os, const string &padding, bool isLast) const override {
         return os << Name() << " " << Type() << " " << IPv6();
     }
 };
@@ -181,7 +181,7 @@ class CRecMX : public CRecord {
         return (CRecord::isEqual(other) && ServerName() == rec->ServerName() && Priority() == rec->Priority());
     }
 
-    ostream &Print(ostream &os) const override {
+    ostream &Print(ostream &os, const string &padding, bool isLast) const override {
         return os << Name() << " " << Type() << " " << Priority() << " " << ServerName();
     }
 };
@@ -204,7 +204,7 @@ class CRecCNAME : public CRecord {
         return other.Name() == Name();
     }
 
-    ostream &Print(ostream &os) const override {
+    ostream &Print(ostream &os, const string &padding, bool isLast) const override {
         return os << Name() << " " << Type() << " " << Reference();
     }
 };
@@ -229,7 +229,7 @@ class CRecSPF : public CRecord {
         return CRecord::isEqual(other);
     }
 
-    ostream &Print(ostream &os) const override {
+    ostream &Print(ostream &os, const string &padding, bool isLast) const override {
         os << Name() << " " << Type();
         for (auto const &it : m_addresses) {
             if (it != *m_addresses.begin()) {
@@ -247,6 +247,10 @@ class CZone : public CRecord {
 
    public:
     CZone(const string &zoneName) : CRecord(zoneName, "CZONE") {}
+
+    CRecord *Clone() const override {
+        return new CZone(*this);
+    }
 
     bool Add(const CRecord &rec) {
         // check if there's a rec already in the m_data;
@@ -282,20 +286,27 @@ class CZone : public CRecord {
         return other.Name() == Name();
     }
 
-    ostream &Print(ostream &os) const override {
-        return os << Name();
-    }
-
-    friend ostream &operator<<(ostream &os, const CZone &z) {
-        os << z.Name() << endl;
-        for (const auto &it : z.m_data) {
-            if (it == z.m_data.end()[-1]) {
+    ostream &Print(ostream &os, const string &padding, bool isLast) const override {
+        os << Name();
+        os << endl;
+        string newPadding = padding;
+        newPadding.append(" ");
+        for (const auto &it : m_data) {
+            os << padding;
+            if (!isLast) {
+                os << "| ";
+            }
+            if (it == m_data.end()[-1]) {
                 os << " \\- ";
+                newPadding.append("  ");
+                it->Print(os, newPadding, true);
             } else {
                 os << " +- ";
+                it->Print(os, newPadding, false);
             }
-            it->Print(os);
-            os << endl;
+            if (it->Type() != "CZONE") {
+                os << endl;
+            }
         }
         return os;
     }
@@ -317,6 +328,7 @@ int main(void) {
     assert(z0.Add(CRecMX("courses", "relay2.fit.cvut.cz.", 10)) == true);
     oss.str("");
     oss << z0;
+    cout << z0;
     assert(oss.str() ==
            "fit\n"
            " +- progtest A 147.32.232.142\n"
@@ -464,6 +476,21 @@ int main(void) {
     assert(z23.Add(CRecA("www", CIPv4("147.32.90.1"))) == true);
     oss.str("");
     cout << z20;
+    cout << "==========================================" << endl;
+    cout << "<ROOT ZONE>\n"
+            " \\- cz\n"
+            "    \\- cvut\n"
+            "       +- fit\n"
+            "       |  +- progtest A 147.32.232.142\n"
+            "       |  +- progtest AAAA 2001:718:2:2902:0:1:2:3\n"
+            "       |  +- courses A 147.32.232.158\n"
+            "       |  +- courses A 147.32.232.160\n"
+            "       |  +- courses A 147.32.232.159\n"
+            "       |  +- pririz CNAME sto.fit.cvut.cz.\n"
+            "       |  \\- courses SPF ip4:147.32.232.128/25, ip4:147.32.232.64/26\n"
+            "       \\- fel\n"
+            "          +- www A 147.32.80.2\n"
+            "          \\- www AAAA 1:2:3:4:5:6:7:8\n";
     oss << z20;
     assert(oss.str() ==
            "<ROOT ZONE>\n"
