@@ -98,7 +98,7 @@ class CSearchResult {
 
     friend ostream &operator<<(ostream &os, const CSearchResult &s) {
         for (auto const &it : s.m_data) {
-            // it->Print(os, "", false);
+            // it->Print(os, "", true);
             os << *it;
             if (it->Type() != "CZONE") {
                 os << endl;
@@ -273,21 +273,21 @@ class CZone : public CRecord {
         auto processIt = toProcess.rbegin();
         while (processIt != toProcess.rend()) {
             vector<shared_ptr<CRecord>> tmp;
-            // cout << "Looking for: " << *processIt << endl;
+            // cout << "[" << (processIt - toProcess.rbegin()) << "] "
+            //      << "Looking for: " << *processIt << " (" << recordName << ")" << endl;
             for (const auto &it : dataToGoThrough) {
                 if (it->Name() == *processIt) {
                     if (it->Type() == "CZONE") {
                         // cout << "\tFound CZONE record for " << *processIt << endl;
-                        // TODO zjistit, jestli hledam tento CZone result ktery jsem prave nasel nebo ne
-                        // cout << "Checking if " << *processIt << " == " << *toProcess.begin() << endl;
-                        if (*processIt == *toProcess.begin()) {
+                        // cout << "Checking if " << *processIt << " == " << *toProcess.begin() << " (" << ((*processIt == *toProcess.begin()) ? "True" : "False") << ")" << endl;
+                        if (&*processIt == &*toProcess.begin()) {
                             // if we are at the last index
-                            // cout << "\t\tAdding:" << endl
+                            // cout << "\t\t(Result) Adding:" << endl
                             //      << *it << "to result" << endl;
                             result.Add(it);
                         } else {
                             for (const auto &it2 : dynamic_cast<CZone &>(*it).Data()) {
-                                // cout << "\t\tAdding:" << endl
+                                // cout << "\t\t(TMP) Adding:" << endl
                                 //      << *it2 << "to tmp" << endl;
                                 tmp.push_back(it2);
                             }
@@ -312,7 +312,12 @@ class CZone : public CRecord {
     CZone(const string &zoneName) : CRecord(zoneName, "CZONE") {}
 
     CRecord *Clone() const override {
-        return new CZone(*this);
+        const CZone &old = *this;
+        CZone *newZone = new CZone(old.Name());
+        for (const auto &it : old.Data()) {
+            newZone->Add(*it);
+        }
+        return newZone;
     }
 
     bool Add(const CRecord &rec) {
@@ -336,8 +341,10 @@ class CZone : public CRecord {
 
     CSearchResult Search(const string &recordName) const {
         if (recordName.find('.') != std::string::npos) {
+            // cout << recordName << ": running _hierarchicSearch" << endl;
             return _hierarchicSearch(recordName, '.');
         } else {
+            // cout << recordName << ": running _regularSearch" << endl;
             return _regularSearch(recordName);
         }
     }
@@ -355,7 +362,7 @@ class CZone : public CRecord {
         os << Name();
         os << endl;
 
-        string newPadding = padding + (!isLast ? "|  " : " ");
+        const string &newPadding = padding + (!isLast ? "|  " : " ");
         for (const auto &it : m_data) {
             os << newPadding;
             if (it == m_data.end()[-1]) {
@@ -389,7 +396,7 @@ int main(void) {
     assert(z0.Add(CRecMX("courses", "relay2.fit.cvut.cz.", 10)) == true);
     oss.str("");
     oss << z0;
-    cout << z0;
+    // cout << z0;
     assert(oss.str() ==
            "fit\n"
            " +- progtest A 147.32.232.142\n"
@@ -494,7 +501,7 @@ int main(void) {
     assert(z10.Add(CRecA("test", CIPv4("147.32.232.232"))) == false);
     oss.str("");
     oss << z10;
-    cout << z10;
+    // cout << z10;
     assert(oss.str() ==
            "fit\n"
            " +- progtest AAAA 2001:718:2:2902:0:1:2:3\n"
@@ -536,7 +543,7 @@ int main(void) {
     assert(z20.Add(z21) == true);
     assert(z23.Add(CRecA("www", CIPv4("147.32.90.1"))) == true);
     oss.str("");
-    cout << z20;
+    // cout << z20;
     // cout << "==========================================" << endl;
     // cout << "<ROOT ZONE>\n"
     //         " \\- cz\n"
@@ -617,16 +624,16 @@ int main(void) {
            "fel\n"
            " +- www A 147.32.80.2\n"
            " \\- www AAAA 1:2:3:4:5:6:7:8\n");
-    cout << "================================" << endl;
-    cout << z20;
-    cout << z20.Search("progtest.fit.cvut.cz").Count() << endl;
+    // cout << "================================" << endl;
+    // cout << z20;
+    // cout << z20.Search("progtest.fit.cvut.cz").Count() << endl;
     assert(z20.Search("progtest.fit.cvut.cz").Count() == 2);
     oss.str("");
     oss << z20.Search("progtest.fit.cvut.cz");
     assert(oss.str() ==
            "progtest A 147.32.232.142\n"
            "progtest AAAA 2001:718:2:2902:0:1:2:3\n");
-    cout << "================================" << endl;
+    // cout << "================================" << endl;
     assert(z20.Search("fit.cvut.cz").Count() == 1);
     oss.str("");
     // cout << z20.Search("fit.cvut.cz");
@@ -643,24 +650,24 @@ int main(void) {
     assert(dynamic_cast<CZone &>(z20.Search("fit.cvut.cz")[0]).Add(z20.Search("fel.cvut.cz")[0]) == true);
     oss.str("");
     oss << z20;
-    cout << z20;
-    cout << "<ROOT ZONE>\n"
-            " \\- cz\n"
-            "    \\- cvut\n"
-            "       +- fit\n"
-            "       |  +- progtest A 147.32.232.142\n"
-            "       |  +- progtest AAAA 2001:718:2:2902:0:1:2:3\n"
-            "       |  +- courses A 147.32.232.158\n"
-            "       |  +- courses A 147.32.232.160\n"
-            "       |  +- courses A 147.32.232.159\n"
-            "       |  +- pririz CNAME sto.fit.cvut.cz.\n"
-            "       |  +- courses SPF ip4:147.32.232.128/25, ip4:147.32.232.64/26\n"
-            "       |  \\- fel\n"
-            "       |     +- www A 147.32.80.2\n"
-            "       |     \\- www AAAA 1:2:3:4:5:6:7:8\n"
-            "       \\- fel\n"
-            "          +- www A 147.32.80.2\n"
-            "          \\- www AAAA 1:2:3:4:5:6:7:8\n";
+    // cout << z20;
+    // cout << "<ROOT ZONE>\n"
+    //         " \\- cz\n"
+    //         "    \\- cvut\n"
+    //         "       +- fit\n"
+    //         "       |  +- progtest A 147.32.232.142\n"
+    //         "       |  +- progtest AAAA 2001:718:2:2902:0:1:2:3\n"
+    //         "       |  +- courses A 147.32.232.158\n"
+    //         "       |  +- courses A 147.32.232.160\n"
+    //         "       |  +- courses A 147.32.232.159\n"
+    //         "       |  +- pririz CNAME sto.fit.cvut.cz.\n"
+    //         "       |  +- courses SPF ip4:147.32.232.128/25, ip4:147.32.232.64/26\n"
+    //         "       |  \\- fel\n"
+    //         "       |     +- www A 147.32.80.2\n"
+    //         "       |     \\- www AAAA 1:2:3:4:5:6:7:8\n"
+    //         "       \\- fel\n"
+    //         "          +- www A 147.32.80.2\n"
+    //         "          \\- www AAAA 1:2:3:4:5:6:7:8\n";
     assert(oss.str() ==
            "<ROOT ZONE>\n"
            " \\- cz\n"
@@ -679,6 +686,7 @@ int main(void) {
            "       \\- fel\n"
            "          +- www A 147.32.80.2\n"
            "          \\- www AAAA 1:2:3:4:5:6:7:8\n");
+    // cout << z20.Search("cz")[0];
     assert(dynamic_cast<CZone &>(z20.Search("fit.cvut.cz")[0]).Add(z20.Search("cz")[0]) == true);
     oss.str("");
     oss << z20;
@@ -716,6 +724,9 @@ int main(void) {
            "       \\- fel\n"
            "          +- www A 147.32.80.2\n"
            "          \\- www AAAA 1:2:3:4:5:6:7:8\n");
+    // cout << z20;
+    // cout << z20.Search("fit.cvut.cz.fit.cvut.cz")[0];
+    // cout << "-------------------------------------------------------------------------------------" << endl;
     assert(dynamic_cast<CZone &>(z20.Search("fit.cvut.cz.fit.cvut.cz")[0]).Add(z20.Search("cz")[0]) == true);
     oss.str("");
     oss << z20;
