@@ -1,7 +1,7 @@
 CXX = g++
 CXX_FLAGS = -std=c++17 -Wall -pedantic -g
 
-BIN = bin
+BIN = bin# TODO replace this with '.' to comply with the specification
 SRC = src
 INCLUDE_PATHS = include
 LIBRARY_PATHS = lib
@@ -14,10 +14,12 @@ EXECUTABLE = main
 all:	clean	$(BIN)/$(EXECUTABLE)	doc
 	./$(BIN)/$(EXECUTABLE)
 
-dev:	$(BIN)/$(EXECUTABLE)
+compile:	$(BIN)/$(EXECUTABLE)
+
+run:
 	./$(BIN)/$(EXECUTABLE)
 
-run:	clean	all
+dev:	compile	run
 
 $(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
 	$(CXX) $(CXX_FLAGS) $^ -o $@ -I$(INCLUDE_PATHS) -L$(LIBRARY_PATHS) $(LIBRARIES)
@@ -26,4 +28,4 @@ doc:
 	doxygen documentation
 
 clean:
-	rm -rf $(BIN)/*
+	rm -rf $(BIN)/* doc/*
