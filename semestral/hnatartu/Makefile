@@ -1,24 +1,29 @@
-# -*- MakeFile -*-
-CXX=g++
-SOURCEDIR = ./src
-CXXFLAGS = -std=c++17 -I$(SOURCEDIR) -Wall -pedantic -g
-CPPFILES = $(shell find $(SOURCEDIR) -type f -name '*.cpp')
-OBJECTS = $(CPPFILES:.cpp=.o)
+CXX = g++
+CXX_FLAGS = -std=c++17 -Wall -pedantic -g
 
-all: compile doc
-compile: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -lncurses $^ -o $@
+BIN = bin
+SRC = src
+INCLUDE_PATHS = include
+LIBRARY_PATHS = lib
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $< -c -o $@
+LIBRARIES = -lSDL2
+EXECUTABLE = main
 
-run: compile
-	./compile
+.PHONY: clean all
+
+all:	clean	$(BIN)/$(EXECUTABLE)	doc
+	./$(BIN)/$(EXECUTABLE)
+
+dev:	$(BIN)/$(EXECUTABLE)
+	./$(BIN)/$(EXECUTABLE)
+
+run:	clean	all
+
+$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
+	$(CXX) $(CXX_FLAGS) $^ -o $@ -I$(INCLUDE_PATHS) -L$(LIBRARY_PATHS) $(LIBRARIES)
 
 doc:
 	doxygen documentation
 
-.PHONY: clean
-
 clean:
-	rm -f $(OBJECTS) ./compile
+	rm -rf $(BIN)/*
