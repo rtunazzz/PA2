@@ -1,0 +1,3 @@
+# Zadání
+## Specifikace programu
+## Polymorfismus
