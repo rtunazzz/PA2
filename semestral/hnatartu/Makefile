@@ -11,8 +11,7 @@ EXECUTABLE = main
 
 .PHONY: clean all
 
-all:	clean	$(BIN)/$(EXECUTABLE)	doc
-	./$(BIN)/$(EXECUTABLE)
+all: $(BIN)/$(EXECUTABLE)	doc
 
 compile:	$(BIN)/$(EXECUTABLE)
 
