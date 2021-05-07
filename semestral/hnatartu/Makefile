@@ -25,7 +25,7 @@ $(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
 	$(CXX) $(CXX_FLAGS) $^ -o $@ -I$(INCLUDE_PATHS) -L$(LIBRARY_PATHS) $(LIBRARIES)
 
 doc:
-	doxygen documentation
+	doxygen Doxyfile
 
 clean:
 	rm -rf main main.dsYM doc/*
