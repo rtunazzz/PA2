@@ -1,10 +1,10 @@
 CXX = g++
 CXX_FLAGS = -std=c++17 -Wall -pedantic -g
 
-BIN = bin# TODO replace this with '.' to comply with the specification
+BIN = .
 SRC = src
-INCLUDE_PATHS = include
-LIBRARY_PATHS = lib
+INCLUDE_PATHS = assets/include
+LIBRARY_PATHS = assets/lib
 
 LIBRARIES = -lSDL2
 EXECUTABLE = main
@@ -28,4 +28,4 @@ doc:
 	doxygen documentation
 
 clean:
-	rm -rf $(BIN)/* doc/*
+	rm -rf main main.dsYM doc/*

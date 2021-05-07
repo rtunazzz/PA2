@@ -17,5 +17,5 @@ Program bude implementovat následující:
 
 ## Polymorfismus
 Polymorfismuss bute využit minimálně v:
-  1. **Reprezentaci různých typů otázek** (abstraktní třída `CQuestionBase`, ze které poté budou dědit všechny typy otázek, jako např. `CSingleChoice`)
+  1. **Reprezentaci různých typů otázek** (abstraktní třída `CQuestionBase`, ze které poté budou dědit všechny typy otázek, jako např. `CSingleChoice`). Všechny typy otázek budou sdílet některé proměnné a metody, jako např. typ, stringová reprezentace otázky a další.
   2. **Reprezentaci různých typů odpovědí** (abstraktní třída `CAnswerBase`, ze které poté budou dědit všechny typy odpovědí, jako např. `CExactMatch`)
