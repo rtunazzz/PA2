@@ -1,7 +1,9 @@
+#include "quiz.h"
 #include "window.h"
 
 int main(int argc, char *argv[]) {
-    CSDLWindow quizWindow = CSDLWindow();
-    quizWindow.run();
+    CQuiz<CSDLWindow> quiz;
+    quiz.Start();
+
     return 0;
 }
