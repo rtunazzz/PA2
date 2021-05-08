@@ -8,7 +8,7 @@
 using namespace std;
 class CQuestionBase {
    private:
-    unique_ptr<CAnswerBase> m_Answer;
+    unique_ptr<CAnswerBase> m_CorrectAnswer;
     string m_Question;
     string m_Type;
 
@@ -16,6 +16,12 @@ class CQuestionBase {
     CQuestionBase();
     CQuestionBase(const string& question, const string& type);
     CQuestionBase(const string& question, const CAnswerBase& answer);
+    /**
+     * @brief Construct a new CQuestionBase object from its string representation
+     * @param stringRepr String (text) representation of the answer
+     */
+    CQuestionBase(const string& stringRepr);
+
     virtual ~CQuestionBase();
 
     const string& getType();
@@ -31,11 +37,17 @@ class CQuestionBase {
      * @param answer Answer to check
      * @return Whether or not is the answer provided correct
      */
-    bool isCorrect(const CAnswerBase& answer);
+    virtual bool isCorrect(const CAnswerBase& answer);
+    /**
+     * @brief Converts this question to a string representation.
+     * This string representation can be then used for import and export.
+     * @return string String (text) representation
+     */
+    virtual string toString();
 };
 
-class CTextInput {};
-class CSingleChoice {};
-class CMultiChoice {};
+class CTextInput : CQuestionBase {};
+class CSingleChoice : CQuestionBase {};
+class CMultiChoice : CQuestionBase {};
 
 #endif  // __QUESTIONS_H__
