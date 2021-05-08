@@ -2,6 +2,10 @@
 
 #include <SDL2/SDL.h>
 
+std::unique_ptr<CWindow> CWindow::Clone() {
+    return std::make_unique<CWindow>(*this);
+}
+
 CSDLWindow::CSDLWindow() {
     SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -13,6 +17,10 @@ CSDLWindow::~CSDLWindow() {
     SDL_DestroyRenderer(m_Renderer);
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
+}
+
+std::unique_ptr<CWindow> CSDLWindow::Clone() {
+    return std::make_unique<CSDLWindow>(*this);
 }
 
 void CSDLWindow::run() {
