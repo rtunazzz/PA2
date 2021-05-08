@@ -9,9 +9,9 @@ LIBRARY_PATHS = assets/lib
 LIBRARIES = -lSDL2
 EXECUTABLE = main
 
-.PHONY: clean all
+.PHONY: clean all doc dev
 
-all: $(BIN)/$(EXECUTABLE)	doc
+all:	compile	doc
 
 compile:	$(BIN)/$(EXECUTABLE)
 
