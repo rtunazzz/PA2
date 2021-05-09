@@ -16,7 +16,10 @@ class CQuiz {
     T m_Window;
 
     /** @brief Vector of questions */
-    vector<unique_ptr<CQuestionBase>> m_Questions;
+    vector<shared_ptr<CQuestionBase>> m_Questions;
+
+    bool import(const string& filename);
+    bool export(const string& filename);
 
    public:
     CQuiz();
