@@ -1,14 +1,19 @@
 CXX = g++
 CXX_FLAGS = -std=c++17 -Wall -pedantic -g -fsanitize=address
-ASAN_OPTIONS = 
+
 BIN = .
 SRC = src
-INCLUDE_PATHS = assets/include
-LIBRARY_PATHS = assets/lib
 
 SOURCES = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
 
-LIBRARIES = -lSDL2 -lSDL2_ttf
+ASAN_OPTIONS = 
+
+SDL_CFLAGS = $(shell sdl2-config --cflags)
+SDL_LDFLAGS = $(shell sdl2-config --libs)
+
+CFLAGS = $(SDL_CFLAGS)
+LDFLAGS = $(SDL_LDFLAGS) -lSDL2_ttf
+
 EXECUTABLE = main
 
 .PHONY: clean all doc dev memdebug
@@ -26,7 +31,7 @@ memdebug: ASAN_OPTIONS=detect_leaks=1,abort_on_error=1
 memdebug:	dev
 
 $(BIN)/$(EXECUTABLE): $(SOURCES)
-	$(CXX) $(CXX_FLAGS) $^ -o $@ -I$(INCLUDE_PATHS) -L$(LIBRARY_PATHS) $(LIBRARIES)
+	$(CXX) $(CXX_FLAGS) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 doc:
 	doxygen Doxyfile
