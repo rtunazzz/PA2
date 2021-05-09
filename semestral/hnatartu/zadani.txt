@@ -1,5 +1,6 @@
 # Zadání
 Tento program umožní vytvářet kvízy a testovat znalosti.
+Celý kvíz bude ovládaný přes třídu `CQuiz`, která se bude starat i o zobrazování uživatelského rozhraní uživateli.
 # Specifikace programu
 Program bude implementovat následující:
   1. Alespoň 3 různé druhy otázek:
