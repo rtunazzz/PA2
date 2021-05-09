@@ -43,7 +43,7 @@ void CSDLWindow::mainMenu() {
 
     // Initialize a screen header with a title "Main Menu"
     CSreenHeader header = CSreenHeader(m_Window, m_Renderer);
-    header.initHeader("Main Menu", m_Roboto, m_Black);
+    header.InitHeader("Main Menu", m_Roboto, m_Black);
     // Render it & make it visible
     header.Render(m_White);
     header.ShowRender();
@@ -55,20 +55,4 @@ void CSDLWindow::mainMenu() {
     .
     .
     */
-    bool isRunning = true;
-    SDL_Event event;
-    while (isRunning) {
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    isRunning = false;
-                    break;
-
-                case SDL_KEYDOWN:
-                    if (event.key.keysym.sym == SDLK_ESCAPE) {
-                        isRunning = false;
-                    }
-            }
-        }
-    }
 }

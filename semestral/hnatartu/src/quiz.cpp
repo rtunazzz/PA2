@@ -11,6 +11,23 @@ void CQuiz<T>::Start() {
 
     // Show main menu
     m_Window.mainMenu();
+
+    bool isRunning = true;
+    SDL_Event event;
+    while (isRunning) {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    isRunning = false;
+                    break;
+
+                case SDL_KEYDOWN:
+                    if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        isRunning = false;
+                    }
+            }
+        }
+    }
 }
 
 /** This is required for every template we want to use because otherwise it won't compile */
