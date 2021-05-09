@@ -25,4 +25,4 @@ Ne všechny implementace metod ale budou mít úplně stejné způsoby vyhodnoco
 Všechny typy odpovědí spolu také budou mít mnoho věcí společných.
 Jako "kostra" všech odpovědí bude implementovaná abstraktní třída `CAnswerBase`. Tato třída bude implementovat všechny sdílené proměnné a metody a jako např.`CAnswerBase::isCorrect`
 ### Reprezentace výstupu
-Uživatelské rozhraní bude implementováno s pomocí knihovny SDL2. Bude ale implementované takovým způsobem, že k případnému přidání dalšího rozhraní (např. terminálové, HTML apod.) nebude třeba měnit již implementované části kódu.
+Uživatelské rozhraní bude implementováno s pomocí knihovny SDL2. Bude ale implementované takovým způsobem, že k případnému přidání dalšího rozhraní (např. terminálové, HTML apod.) nebude třeba měnit již implementované části kódu. Tato třída bude tedy volat metody `CWindow` polymorfně.
