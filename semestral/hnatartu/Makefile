@@ -6,7 +6,9 @@ SRC = src
 INCLUDE_PATHS = assets/include
 LIBRARY_PATHS = assets/lib
 
-LIBRARIES = -lSDL2
+SOURCES = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
+
+LIBRARIES = -lSDL2 -lSDL2_ttf
 EXECUTABLE = main
 
 .PHONY: clean all doc dev
@@ -20,7 +22,7 @@ run:
 
 dev:	compile	run
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
+$(BIN)/$(EXECUTABLE): $(SOURCES)
 	$(CXX) $(CXX_FLAGS) $^ -o $@ -I$(INCLUDE_PATHS) -L$(LIBRARY_PATHS) $(LIBRARIES)
 
 doc:
