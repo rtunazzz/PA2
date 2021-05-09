@@ -3,15 +3,14 @@
 #include <iostream>
 
 template <class T>
-CQuiz<T>::CQuiz() {
-    T tmp;
-    m_Window = tmp.Clone();
-}
+CQuiz<T>::CQuiz() {}
 
 template <class T>
 void CQuiz<T>::Start() {
     cout << "Starting a quiz!" << endl;
-    m_Window->run();
+
+    // Show main menu
+    m_Window.mainMenu();
 }
 
 /** This is required for every template we want to use because otherwise it won't compile */
