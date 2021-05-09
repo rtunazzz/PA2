@@ -38,7 +38,7 @@ class CSreenHeader {
      * @param font Font of the header
      * @param textColor Text color of the header
      */
-    void initHeader(const string& title, TTF_Font* font, SDL_Color textColor);
+    void InitHeader(const string& title, TTF_Font* font, SDL_Color textColor);
 
     /**
      * @brief Renders the header with the background color.

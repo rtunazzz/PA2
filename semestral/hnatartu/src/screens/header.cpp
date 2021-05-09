@@ -2,7 +2,7 @@
 
 CSreenHeader::CSreenHeader(SDL_Window* window, SDL_Renderer* renderer) : m_Window(window), m_Renderer(renderer) {}
 
-void CSreenHeader::initHeader(const string& title, TTF_Font* font, SDL_Color textColor) {
+void CSreenHeader::InitHeader(const string& title, TTF_Font* font, SDL_Color textColor) {
     // Get the window size
     int wWidth;
     int wHeight;
