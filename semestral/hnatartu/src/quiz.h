@@ -1,8 +1,8 @@
 #ifndef __QUIZ_H__
 #define __QUIZ_H__
 
+#include <map>
 #include <memory>
-#include <vector>
 
 #include "questions.h"
 #include "window.h"
@@ -15,11 +15,18 @@ class CQuiz {
     /** @brief Quiz window */
     T m_Window;
 
-    /** @brief Vector of questions */
-    vector<shared_ptr<CQuestionBase>> m_Questions;
+    /** @brief Map (index, quesition) of questions */
+    map<int, shared_ptr<CQuestionBase>> m_Questions;
 
     bool importQuiz(const string& filename);
     bool exportQuiz(const string& filename);
+
+    void addQuestion(shared_ptr<CQuestionBase> question);
+    bool removeQuestion(shared_ptr<CQuestionBase> question);
+
+    void listQuestions();
+
+    void startQuiz();
 
    public:
     CQuiz();
