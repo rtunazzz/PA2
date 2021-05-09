@@ -18,8 +18,8 @@ class CQuiz {
     /** @brief Vector of questions */
     vector<shared_ptr<CQuestionBase>> m_Questions;
 
-    bool import(const string& filename);
-    bool export(const string& filename);
+    bool importQuiz(const string& filename);
+    bool exportQuiz(const string& filename);
 
    public:
     CQuiz();
