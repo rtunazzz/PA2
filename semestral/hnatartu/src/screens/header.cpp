@@ -18,8 +18,8 @@ void CSreenHeader::initHeader(const string& title, TTF_Font* font, SDL_Color tex
 
     // center it horizontally
     m_HeaderRect.x = (int)(wWidth / 2) - (int)(m_HeaderRect.w / 2);
-    // align it to the top 25% of the screen vertically
-    m_HeaderRect.y = (int)(wHeight / 4) - (int)(m_HeaderRect.h / 2);
+    // align it to the top portion of the screen vertically
+    m_HeaderRect.y = (int)(wHeight / 18) - (int)(m_HeaderRect.h / 2);
 
     // free the surface since it's no longer needed (we only need the texture)
     SDL_FreeSurface(headerSurface);
