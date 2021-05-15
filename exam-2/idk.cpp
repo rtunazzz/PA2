@@ -103,7 +103,7 @@ class CPerson {
 
    public:
     CPerson() = delete;
-    virtual ~CPerson(){};
+    virtual ~CPerson() = default;
 
     // constructor
     CPerson(int id, const string &name, CDate dateBorn) : m_Id(id), m_Name(name), m_DateBorn(dateBorn) {}
@@ -121,10 +121,6 @@ class CPerson {
         throw logic_error("RetireDate is not implemented");
     }
 
-    virtual const string Type() const {
-        throw logic_error("Type is not implemented");
-    }
-
     void AddParent(shared_ptr<CPerson> person) {
         m_Parents.insert(person);
     };
@@ -132,8 +128,6 @@ class CPerson {
     void AddKid(shared_ptr<CPerson> person) {
         m_Kids.insert(person);
     };
-
-    virtual bool WasInMilitary() const { return false; }
 
     // set<string> ScanPedigree ()
     set<string> ScanPedigree() {
@@ -146,11 +140,8 @@ class CPerson {
         return result;
     }
 
-    ostream &Print(ostream &os) {
-        return os << GetID() << ": " << Name()
-                  << ", " << Type()
-                  << ", born: " << Born()
-                  << ", retires: " << RetireDate();
+    virtual ostream &Print(ostream &os) {
+        return os << GetID() << ": " << Name();
     }
 
     // operator <<
@@ -164,18 +155,21 @@ class CMan : public CPerson {
     vector<int> m_MilitaryLog;
 
    public:
+    CMan() = delete;
     CMan(int id, const string &name, CDate dateBorn) : CPerson(id, name, dateBorn) {}
-    ~CMan() = default;
 
     shared_ptr<CPerson> Clone() override {
         return make_shared<CMan>(*this);
     }
 
-    const string Type() const override {
-        return "man";
+    ostream &Print(ostream &os) override {
+        return CPerson::Print(os)
+               << ", man"
+               << ", born: " << Born()
+               << ", retires: " << RetireDate();
     }
 
-    bool WasInMilitary() const override { return m_MilitaryLog.size() > 0; }
+    bool WasInMilitary() const { return m_MilitaryLog.size() > 0; }
 
     CDate RetireDate() override {
         // TODO save this result into a variable and only recalculate when needed
@@ -204,8 +198,10 @@ class CMan : public CPerson {
 
         // odečte se 10 dní za každého syna, který byl alespoň 1 den na vojenském cvičení,
         for (auto const &it : m_Kids) {
-            if (it->WasInMilitary())
+            shared_ptr<CMan> m = dynamic_pointer_cast<CMan>(it);
+            if (m != nullptr && m->WasInMilitary()) {
                 retireDate.SubDays(10);
+            }
         }
 
         // maximálně lze odečíst 20 let
@@ -220,15 +216,18 @@ class CMan : public CPerson {
 
 class CWoman : public CPerson {
    public:
+    CWoman() = delete;
     CWoman(int id, const string &name, CDate dateBorn) : CPerson(id, name, dateBorn) {}
-    ~CWoman() = default;
 
     shared_ptr<CPerson> Clone() override {
         return make_shared<CWoman>(*this);
     }
 
-    const string Type() const override {
-        return "woman";
+    ostream &Print(ostream &os) override {
+        return CPerson::Print(os)
+               << ", woman"
+               << ", born: " << Born()
+               << ", retires: " << RetireDate();
     }
 
     CDate RetireDate() override {
@@ -244,8 +243,10 @@ class CWoman : public CPerson {
         for (auto const &it : m_Kids) {
             retireDate.SubYears(4);
 
-            if (it->WasInMilitary())
+            shared_ptr<CMan> m = dynamic_pointer_cast<CMan>(it);
+            if (m != nullptr && m->WasInMilitary()) {
                 retireDate.SubDays(10);
+            }
         }
 
         // maximálně lze odečíst 20 let
@@ -284,6 +285,7 @@ class CRegister {
             person->AddParent(father);
             father->AddKid(person);
         }
+
         if (mother != nullptr) {
             person->AddParent(mother);
             mother->AddKid(person);
@@ -301,7 +303,7 @@ class CRegister {
         return found->second;
     }
 
-    vector<shared_ptr<CPerson>> FindRetired(CDate from, CDate to) const {
+    vector<shared_ptr<CPerson>> FindRetired(CDate from, CDate to) {
         vector<shared_ptr<CPerson>> result;
         // cout << "Looking through " << m_Data.size() << " records." << endl;
         for (auto const &it : m_Data) {
