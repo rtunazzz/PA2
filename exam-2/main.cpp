@@ -69,7 +69,11 @@ class CDate {
             }
         else {
             SubMonths(1);
-            SubDays(days - monthDays[Month()]);
+            if (days - monthDays[Month()] > 0)
+                SubDays(days - monthDays[Month()]);
+            else if (days - monthDays[Month()] < 0) {
+                m_Day += monthDays[Month()] - days;
+            }
         }
     }
 
@@ -93,6 +97,26 @@ class CDate {
         return false;
     }
 
+    friend bool operator>(const CDate &first, const CDate &second) {
+        if (first.Year() > second.Year()) {
+            return true;
+        } else if (first.Year() != second.Year()) {
+            return false;
+        }
+
+        if (first.Month() > second.Month()) {
+            return true;
+        } else if (first.Month() != second.Month()) {
+            return false;
+        }
+
+        if (first.Day() > second.Day()) {
+            return true;
+        }
+
+        return false;
+    }
+
     friend ostream &operator<<(ostream &os, const CDate &d) {
         os << setw(4) << setfill('0') << d.Year() << "-";
         os << setw(2) << setfill('0') << d.Month() << "-";
@@ -107,8 +131,8 @@ class CPerson {
     CDate m_DateBorn;
 
    protected:
-    set<shared_ptr<CPerson>> m_Parents;
-    set<shared_ptr<CPerson>> m_Kids;
+    vector<weak_ptr<CPerson>> m_Parents;
+    vector<weak_ptr<CPerson>> m_Kids;
 
    public:
     CPerson() = delete;
@@ -135,11 +159,11 @@ class CPerson {
     }
 
     void AddParent(shared_ptr<CPerson> person) {
-        m_Parents.insert(person);
+        m_Parents.push_back(person);
     };
 
     void AddKid(shared_ptr<CPerson> person) {
-        m_Kids.insert(person);
+        m_Kids.push_back(person);
     };
 
     virtual bool WasInMilitary() const { return false; }
@@ -148,9 +172,12 @@ class CPerson {
     set<string> ScanPedigree() {
         set<string> result;
         for (auto const &it : m_Parents) {
-            result.insert(it->Name());
-            set<string> prevPedigrees = it->ScanPedigree();
-            result.insert(prevPedigrees.begin(), prevPedigrees.end());
+            shared_ptr<CPerson> p = it.lock();
+            if (p) {
+                result.insert(p->Name());
+                set<string> prevPedigrees = p->ScanPedigree();
+                result.insert(prevPedigrees.begin(), prevPedigrees.end());
+            }
         }
         return result;
     }
@@ -215,7 +242,8 @@ class CMan : public CPerson {
 
         // odečte se 10 dní za každého syna, který byl alespoň 1 den na vojenském cvičení,
         for (auto const &it : m_Kids) {
-            if (it->WasInMilitary())
+            shared_ptr<CPerson> p = it.lock();
+            if (p && p->WasInMilitary())
                 retireDate.SubDays(10);
         }
 
@@ -230,14 +258,6 @@ class CMan : public CPerson {
         if (days > 0) {
             m_MilitaryLog.push_back(days);
         }
-    }
-
-    // operator <<
-    friend ostream &operator<<(ostream &os, CMan &p) {
-        return os << p.GetID() << ": " << p.Name()
-                  << ", man"
-                  << ", born: " << p.Born()
-                  << ", retires: " << p.RetireDate();
     }
 };
 
@@ -267,8 +287,9 @@ class CWoman : public CPerson {
         // odečte se 10 dní za každého syna, který byl alespoň 1 den na vojenském cvičení,
         for (auto const &it : m_Kids) {
             retireDate.SubYears(4);
+            shared_ptr<CPerson> p = it.lock();
 
-            if (it->WasInMilitary())
+            if (p && p->WasInMilitary())
                 retireDate.SubDays(10);
         }
 
@@ -277,14 +298,6 @@ class CWoman : public CPerson {
             return retireDate;
         else
             return CDate(bornDate.Year() + 60 - 20, bornDate.Month(), bornDate.Day());
-    }
-
-    // operator <<
-    friend ostream &operator<<(ostream &os, CWoman &p) {
-        return os << p.GetID() << ": " << p.Name()
-                  << ", woman"
-                  << ", born: " << p.Born()
-                  << ", retires: " << p.RetireDate();
     }
 };
 
@@ -299,6 +312,7 @@ class CRegister {
     // copy constructor (if needed)
     CRegister(const CRegister &old) {
         for (auto const &it : old.m_Data) {
+            // m_Data.insert({it.first, it.second->Clone()});
             m_Data.insert({it.first, it.second->Clone()});
         }
     }
@@ -341,24 +355,10 @@ class CRegister {
             // cout << "Checking if\t" << *p << " is between " << from << " and " << to << endl;
             CDate retireDate = p->RetireDate();
 
-            if (from.Year() > retireDate.Year())
+            if (from > retireDate)
                 continue;
 
-            if (to.Year() < retireDate.Year())
-                continue;
-
-            if (from.Year() == retireDate.Year() && from.Month() > retireDate.Month())
-                continue;
-
-            if (to.Year() == retireDate.Year() && to.Month() < retireDate.Month())
-                continue;
-
-            // // filter out the ones that already retired (by a few days)
-            if (from.Year() == retireDate.Year() && from.Month() == retireDate.Month() && from.Day() < retireDate.Day())
-                continue;
-
-            // // filter out the ones that are over the limit by day
-            if (to.Year() == retireDate.Year() && to.Month() == retireDate.Month() && to.Day() > retireDate.Day())
+            if (to < retireDate)
                 continue;
 
             result.push_back(p);
@@ -478,7 +478,8 @@ int main(void) {
     oss.str("");
     oss << *r[0].FindByID(10);
     assert(oss.str() == "10: Smith Samuel, man, born: 1930-11-29, retires: 1975-11-29");
-    vector<shared_ptr<CPerson>> tmp = r[0].FindRetired(CDate(1960, 1, 1), CDate(2000, 1, 1));
+
+    // vector<shared_ptr<CPerson>> tmp = r[0].FindRetired(CDate(1960, 1, 1), CDate(2000, 1, 1));
     // for (auto const &it : tmp) {
     //     cout << *it << endl;
     // }
