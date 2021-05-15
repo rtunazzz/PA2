@@ -33,8 +33,14 @@ class CDate {
     int Month() const { return m_Month; }
     int Day() const { return m_Day; }
 
-    void SubYears(int years) { m_Year -= years; }
+    void SubYears(int years) {
+        if (years < 1) return;
+        m_Year -= years;
+    }
+
     void SubMonths(int months) {
+        if (months < 1) return;
+
         if (months < 12)
             if (m_Month > months)
                 m_Month -= months;
@@ -50,7 +56,10 @@ class CDate {
     }
 
     void SubDays(int days) {
+        if (days < 1) return;
+
         static int monthDays[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
         if (days < monthDays[Month()])
             if (m_Day > days)
                 m_Day -= days;
@@ -164,6 +173,7 @@ class CMan : public CPerson {
     vector<int> m_MilitaryLog;
 
    public:
+    CMan() = delete;
     CMan(int id, const string &name, CDate dateBorn) : CPerson(id, name, dateBorn) {}
     ~CMan() = default;
 
@@ -187,7 +197,7 @@ class CMan : public CPerson {
 
         // Calculate base retire date (+ 65 years for men)
         CDate retireDate = CDate(bornDate.Year() + 65, bornDate.Month(), bornDate.Day());
-        for (size_t i = 0; i < m_MilitaryLog.size(); i++) {
+        for (size_t i = 0; i < m_MilitaryLog.size(); ++i) {
             int multiplicator = 1;
             // doba strávená na nejdelším vojenském cvičení se odečte 4x,
             if (i == 0)
@@ -199,7 +209,8 @@ class CMan : public CPerson {
             else if (i == 2)
                 multiplicator = 2;
             // ostatní vojenská cvičení se odečítají podle své délky bez zvýhodnění,
-            retireDate.SubDays(multiplicator * m_MilitaryLog[i]);
+
+            retireDate.SubDays(multiplicator * (m_MilitaryLog[i]));
         }
 
         // odečte se 10 dní za každého syna, který byl alespoň 1 den na vojenském cvičení,
@@ -215,11 +226,24 @@ class CMan : public CPerson {
             return CDate(bornDate.Year() + 65 - 20, bornDate.Month(), bornDate.Day());
     }
 
-    void Military(int days) { m_MilitaryLog.push_back(days); }
+    void Military(int days) {
+        if (days > 0) {
+            m_MilitaryLog.push_back(days);
+        }
+    }
+
+    // operator <<
+    friend ostream &operator<<(ostream &os, CMan &p) {
+        return os << p.GetID() << ": " << p.Name()
+                  << ", man"
+                  << ", born: " << p.Born()
+                  << ", retires: " << p.RetireDate();
+    }
 };
 
 class CWoman : public CPerson {
    public:
+    CWoman() = delete;
     CWoman(int id, const string &name, CDate dateBorn) : CPerson(id, name, dateBorn) {}
     ~CWoman() = default;
 
@@ -253,6 +277,14 @@ class CWoman : public CPerson {
             return retireDate;
         else
             return CDate(bornDate.Year() + 60 - 20, bornDate.Month(), bornDate.Day());
+    }
+
+    // operator <<
+    friend ostream &operator<<(ostream &os, CWoman &p) {
+        return os << p.GetID() << ": " << p.Name()
+                  << ", woman"
+                  << ", born: " << p.Born()
+                  << ", retires: " << p.RetireDate();
     }
 };
 
@@ -308,27 +340,28 @@ class CRegister {
             shared_ptr<CPerson> p = it.second;
             // cout << "Checking if\t" << *p << " is between " << from << " and " << to << endl;
             CDate retireDate = p->RetireDate();
-            if (from.Year() < retireDate.Year()) {
-                if (to.Year() > retireDate.Year()) {
-                    result.push_back(p);
-                    continue;
-                } else if (to.Year() == retireDate.Year()) {
-                    if (to.Month() >= retireDate.Month()) {
-                        result.push_back(p);
-                        continue;
-                    }
-                }
-            } else if (from.Year() == retireDate.Year()) {
-                if (to.Year() > retireDate.Year()) {
-                    result.push_back(p);
-                    continue;
-                } else if (to.Year() == retireDate.Year()) {
-                    if (to.Month() >= retireDate.Month()) {
-                        result.push_back(p);
-                        continue;
-                    }
-                }
-            }
+
+            if (from.Year() > retireDate.Year())
+                continue;
+
+            if (to.Year() < retireDate.Year())
+                continue;
+
+            if (from.Year() == retireDate.Year() && from.Month() > retireDate.Month())
+                continue;
+
+            if (to.Year() == retireDate.Year() && to.Month() < retireDate.Month())
+                continue;
+
+            // // filter out the ones that already retired (by a few days)
+            if (from.Year() == retireDate.Year() && from.Month() == retireDate.Month() && from.Day() < retireDate.Day())
+                continue;
+
+            // // filter out the ones that are over the limit by day
+            if (to.Year() == retireDate.Year() && to.Month() == retireDate.Month() && to.Day() > retireDate.Day())
+                continue;
+
+            result.push_back(p);
         }
 
         return result;

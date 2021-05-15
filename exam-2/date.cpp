@@ -91,8 +91,66 @@ class CDate {
     }
 };
 
-int main() {
-    cout << "********************" << endl;
+void compareTest() {
+    {
+        cout << "8) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        CDate d2 = CDate(2001, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == true);
+    }
+    {
+        cout << "8) -----------------" << endl;
+        CDate d = CDate(2001, 1, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+    {
+        cout << "9) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+    {
+        cout << "10) ----------------" << endl;
+        CDate d = CDate(2000, 10, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+    {
+        cout << "11) ----------------" << endl;
+        CDate d = CDate(2000, 10, 1);
+        CDate d2 = CDate(2000, 10, 11);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == true);
+    }
+    {
+        cout << "12) ----------------" << endl;
+        CDate d = CDate(2000, 10, 11);
+        CDate d2 = CDate(2000, 10, 12);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == true);
+    }
+    {
+        cout << "13) ----------------" << endl;
+        CDate d = CDate(2001, 10, 11);
+        CDate d2 = CDate(2000, 10, 12);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+}
+
+void subTest() {
     {
         cout << "1) -----------------" << endl;
         CDate d = CDate(2000, 12, 10);
@@ -159,68 +217,33 @@ int main() {
         cout << "After substracting: " << d << endl;
     }
     {
-        cout << "8) -----------------" << endl;
-        CDate d = CDate(2000, 1, 1);
-        CDate d2 = CDate(2001, 1, 1);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == true);
-    }
-    {
-        cout << "8) -----------------" << endl;
-        CDate d = CDate(2001, 1, 1);
-        CDate d2 = CDate(2000, 1, 1);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == false);
-    }
-    {
-        cout << "9) -----------------" << endl;
-        CDate d = CDate(2000, 1, 1);
-        CDate d2 = CDate(2000, 1, 1);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == false);
-    }
-    {
-        cout << "10) ----------------" << endl;
-        CDate d = CDate(2000, 10, 1);
-        CDate d2 = CDate(2000, 1, 1);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == false);
-    }
-    {
-        cout << "11) ----------------" << endl;
-        CDate d = CDate(2000, 10, 1);
-        CDate d2 = CDate(2000, 10, 11);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == true);
-    }
-    {
-        cout << "12) ----------------" << endl;
-        CDate d = CDate(2000, 10, 11);
-        CDate d2 = CDate(2000, 10, 12);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == true);
-    }
-    {
-        cout << "13) ----------------" << endl;
-        CDate d = CDate(2001, 10, 11);
-        CDate d2 = CDate(2000, 10, 12);
-        cout << "Is " << d << " < " << d2 << " ?" << endl;
-        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
-        assert((d < d2) == false);
-    }
-    {
         cout << "14) ----------------" << endl;
         CDate d = CDate(1929, 12, 11);
         cout << "Substracting 123 days from: " << d << endl;
         d.SubDays(123);
         cout << "After substracting: " << d << endl;
     }
+    {
+        cout << "15) ----------------" << endl;
+        CDate d = CDate(1929, 12, 11);
+        cout << "Substracting 0 days from: " << d << endl;
+        d.SubDays(0);
+        cout << "After substracting: " << d << endl;
+    }
+}
+int main() {
+    cout << "********************" << endl;
+    subTest();
+
+    {
+        cout << "2) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 20 days from: " << d << endl;
+        d.SubDays(20);
+        cout << "After substracting: " << d << endl;
+    }
 
     cout << "********************" << endl;
+
+    return 0;
 }
