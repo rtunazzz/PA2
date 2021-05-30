@@ -47,11 +47,13 @@ class CDate {
             else {
                 SubYears(1);
                 m_Month = 12 - (months - m_Month);
+                // m_Month = 12 - (m_Month - months);
             }
         else {
             int years = months / 12;
             SubYears(years);
-            m_Month -= months - (years * 12);
+            // m_Month -= months - (years * 12);
+            SubMonths(months - (years * 12));
         }
     }
 
@@ -72,7 +74,7 @@ class CDate {
             if (days - monthDays[Month()] > 0)
                 SubDays(days - monthDays[Month()]);
             else if (days - monthDays[Month()] < 0) {
-                m_Day += monthDays[Month()] - days;
+                m_Day = monthDays[Month()] - (days - m_Day);
             }
         }
     }
@@ -322,30 +324,35 @@ void subTest() {
         d.SubDays(0);
         cout << "After substracting: " << d << endl;
     }
-}
-int main() {
-    cout << "********************" << endl;
-    subTest();
-    compareTest1();
-    compareTest2();
-
-    // {
-    //     cout << "2) -----------------" << endl;
-    //     CDate d = CDate(2000, 12, 10);
-    //     cout << "Substracting 20 days from: " << d << endl;
-    //     d.SubDays(20);
-    //     cout << "Substracting 20 days from: " << d << endl;
-    //     d.SubDays(20);
-    //     cout << "Substracting 20 days from: " << d << endl;
-    //     d.SubDays(20);
-    //     cout << "After substracting: " << d << endl;
-    // }
 
     {
         cout << "4) -----------------" << endl;
         CDate d = CDate(2000, 12, 10);
         cout << "Substracting 60 days from: " << d << endl;
         d.SubDays(60);
+        cout << "After substracting: " << d << endl;
+    }
+
+    {
+        cout << "4) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        cout << "Substracting 1 month from: " << d << endl;
+        d.SubMonths(1);
+        cout << "After substracting: " << d << endl;
+    }
+}
+
+int main() {
+    cout << "********************" << endl;
+    // subTest();
+    // compareTest1();
+    // compareTest2();
+
+    {
+        cout << "1) -----------------" << endl;
+        CDate d = CDate(2000, 1, 10);
+        cout << "Substracting 23 months from: " << d << endl;
+        d.SubMonths(23);
         cout << "After substracting: " << d << endl;
     }
 

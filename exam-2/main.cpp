@@ -47,6 +47,7 @@ class CDate {
             else {
                 SubYears(1);
                 m_Month = 12 - (months - m_Month);
+                // m_Month = 12 - (m_Month - months);
             }
         else {
             int years = months / 12;
@@ -144,10 +145,23 @@ class CPerson {
     // GetID ()
     int GetID() const { return m_Id; }
     const string &Name() const { return m_Name; }
-    const CDate &Born() const { return m_DateBorn; }
+    const CDate &DateBorn() const { return m_DateBorn; }
 
-    virtual shared_ptr<CPerson> Clone() {
-        return make_shared<CPerson>(*this);
+    virtual shared_ptr<CPerson> Clone() const {
+        shared_ptr<CPerson> s = make_shared<CPerson>(this->GetID(), this->Name(), this->DateBorn());
+        for (auto const &it : this->m_Parents) {
+            shared_ptr<CPerson> p = it.lock();
+            if (p) {
+                s->AddParent(p->Clone());
+            }
+        }
+        for (auto const &it : this->m_Kids) {
+            shared_ptr<CPerson> p = it.lock();
+            if (p) {
+                s->AddKid(p->Clone());
+            }
+        }
+        return s;
     }
 
     virtual CDate RetireDate() {
@@ -171,8 +185,8 @@ class CPerson {
     // set<string> ScanPedigree ()
     set<string> ScanPedigree() {
         set<string> result;
-        for (auto const &it : m_Parents) {
-            shared_ptr<CPerson> p = it.lock();
+        for (size_t i = 0; i < m_Parents.size(); ++i) {
+            shared_ptr<CPerson> p = m_Parents[i].lock();
             if (p) {
                 result.insert(p->Name());
                 set<string> prevPedigrees = p->ScanPedigree();
@@ -185,7 +199,7 @@ class CPerson {
     ostream &Print(ostream &os) {
         return os << GetID() << ": " << Name()
                   << ", " << Type()
-                  << ", born: " << Born()
+                  << ", born: " << DateBorn()
                   << ", retires: " << RetireDate();
     }
 
@@ -204,8 +218,21 @@ class CMan : public CPerson {
     CMan(int id, const string &name, CDate dateBorn) : CPerson(id, name, dateBorn) {}
     ~CMan() = default;
 
-    shared_ptr<CPerson> Clone() override {
-        return make_shared<CMan>(*this);
+    shared_ptr<CPerson> Clone() const override {
+        shared_ptr<CPerson> s = make_shared<CMan>(this->GetID(), this->Name(), this->DateBorn());
+        for (auto const &it : m_Parents) {
+            shared_ptr<CPerson> p = it.lock();
+            if (p) {
+                s->AddParent(p);
+            }
+        }
+        for (auto const &it : m_Kids) {
+            shared_ptr<CPerson> p = it.lock();
+            if (p) {
+                s->AddKid(p);
+            }
+        }
+        return s;
     }
 
     const string Type() const override {
@@ -217,7 +244,7 @@ class CMan : public CPerson {
     CDate RetireDate() override {
         // TODO save this result into a variable and only recalculate when needed
 
-        const CDate &bornDate = Born();
+        const CDate &bornDate = DateBorn();
 
         // Sort the vector so it's sorted from the highest to the lowest
         sort(m_MilitaryLog.begin(), m_MilitaryLog.end(), greater<int>());
@@ -241,8 +268,8 @@ class CMan : public CPerson {
         }
 
         // odečte se 10 dní za každého syna, který byl alespoň 1 den na vojenském cvičení,
-        for (auto const &it : m_Kids) {
-            shared_ptr<CPerson> p = it.lock();
+        for (size_t i = 0; i < m_Kids.size(); ++i) {
+            shared_ptr<CPerson> p = m_Kids[i].lock();
             if (p && p->WasInMilitary())
                 retireDate.SubDays(10);
         }
@@ -267,8 +294,21 @@ class CWoman : public CPerson {
     CWoman(int id, const string &name, CDate dateBorn) : CPerson(id, name, dateBorn) {}
     ~CWoman() = default;
 
-    shared_ptr<CPerson> Clone() override {
-        return make_shared<CWoman>(*this);
+    shared_ptr<CPerson> Clone() const override {
+        shared_ptr<CPerson> s = make_shared<CWoman>(this->GetID(), this->Name(), this->DateBorn());
+        for (size_t i = 0; i < m_Parents.size(); ++i) {
+            shared_ptr<CPerson> p = m_Parents[i].lock();
+            if (p) {
+                s->AddParent(p);
+            }
+        }
+        for (size_t i = 0; i < m_Kids.size(); ++i) {
+            shared_ptr<CPerson> p = m_Kids[i].lock();
+            if (p) {
+                s->AddKid(p);
+            }
+        }
+        return s;
     }
 
     const string Type() const override {
@@ -278,16 +318,16 @@ class CWoman : public CPerson {
     CDate RetireDate() override {
         // TODO save this result into a variable and only recalculate when needed
 
-        const CDate &bornDate = Born();
+        const CDate &bornDate = DateBorn();
 
         // Calculate base retire date (+ 60 years for women)
         CDate retireDate = CDate(bornDate.Year() + 60, bornDate.Month(), bornDate.Day());
 
         // za každé dítě se oba odchodu do důchodu zkracuje o 4 roky
         // odečte se 10 dní za každého syna, který byl alespoň 1 den na vojenském cvičení,
-        for (auto const &it : m_Kids) {
+        for (size_t i = 0; i < m_Kids.size(); ++i) {
+            shared_ptr<CPerson> p = m_Kids[i].lock();
             retireDate.SubYears(4);
-            shared_ptr<CPerson> p = it.lock();
 
             if (p && p->WasInMilitary())
                 retireDate.SubDays(10);
@@ -312,7 +352,6 @@ class CRegister {
     // copy constructor (if needed)
     CRegister(const CRegister &old) {
         for (auto const &it : old.m_Data) {
-            // m_Data.insert({it.first, it.second->Clone()});
             m_Data.insert({it.first, it.second->Clone()});
         }
     }
@@ -327,12 +366,12 @@ class CRegister {
 
         m_Data.insert({person->GetID(), person});
         if (father != nullptr) {
-            person->AddParent(father);
             father->AddKid(person);
+            person->AddParent(father);
         }
         if (mother != nullptr) {
-            person->AddParent(mother);
             mother->AddKid(person);
+            person->AddParent(mother);
         }
 
         return true;
@@ -369,6 +408,222 @@ class CRegister {
 };
 
 #ifndef __PROGTEST__
+void compareTest1() {
+    {
+        cout << "8) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        CDate d2 = CDate(2001, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == true);
+    }
+    {
+        cout << "8) -----------------" << endl;
+        CDate d = CDate(2001, 1, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+    {
+        cout << "9) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+    {
+        cout << "10) ----------------" << endl;
+        CDate d = CDate(2000, 10, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+    {
+        cout << "11) ----------------" << endl;
+        CDate d = CDate(2000, 10, 1);
+        CDate d2 = CDate(2000, 10, 11);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == true);
+    }
+    {
+        cout << "12) ----------------" << endl;
+        CDate d = CDate(2000, 10, 11);
+        CDate d2 = CDate(2000, 10, 12);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == true);
+    }
+    {
+        cout << "13) ----------------" << endl;
+        CDate d = CDate(2001, 10, 11);
+        CDate d2 = CDate(2000, 10, 12);
+        cout << "Is " << d << " < " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d < d2) ? "True" : "False") << endl;
+        assert((d < d2) == false);
+    }
+}
+
+void compareTest2() {
+    {
+        cout << "8) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        CDate d2 = CDate(2001, 1, 1);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == false);
+    }
+    {
+        cout << "8) -----------------" << endl;
+        CDate d = CDate(2001, 1, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == true);
+    }
+    {
+        cout << "9) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == false);
+    }
+    {
+        cout << "10) ----------------" << endl;
+        CDate d = CDate(2000, 10, 1);
+        CDate d2 = CDate(2000, 1, 1);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == true);
+    }
+    {
+        cout << "11) ----------------" << endl;
+        CDate d = CDate(2000, 10, 1);
+        CDate d2 = CDate(2000, 10, 11);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == false);
+    }
+    {
+        cout << "12) ----------------" << endl;
+        CDate d = CDate(2000, 10, 11);
+        CDate d2 = CDate(2000, 10, 12);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == false);
+    }
+    {
+        cout << "13) ----------------" << endl;
+        CDate d = CDate(2001, 10, 11);
+        CDate d2 = CDate(2000, 10, 12);
+        cout << "Is " << d << " > " << d2 << " ?" << endl;
+        cout << "\t -> " << ((d > d2) ? "True" : "False") << endl;
+        assert((d > d2) == true);
+    }
+}
+
+void subTest() {
+    {
+        cout << "1) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 10 days from: " << d << endl;
+        d.SubDays(10);
+        cout << "After substracting: " << d << endl;
+    }
+
+    {
+        cout << "2) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 20 days from: " << d << endl;
+        d.SubDays(20);
+        cout << "After substracting: " << d << endl;
+    }
+
+    {
+        cout << "2) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 20 days from: " << d << endl;
+        d.SubDays(20);
+        cout << "Substracting 20 days from: " << d << endl;
+        d.SubDays(20);
+        cout << "Substracting 20 days from: " << d << endl;
+        d.SubDays(20);
+        cout << "After substracting: " << d << endl;
+    }
+
+    {
+        cout << "3) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 40 days from: " << d << endl;
+        d.SubDays(40);
+        cout << "Substracting 20 days from: " << d << endl;
+        d.SubDays(20);
+        cout << "After substracting: " << d << endl;
+    }
+    {
+        cout << "4) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 60 days from: " << d << endl;
+        d.SubDays(60);
+        cout << "After substracting: " << d << endl;
+    }
+    {
+        cout << "5) -----------------" << endl;
+        CDate d = CDate(2000, 1, 10);
+        cout << "Substracting 10 days from: " << d << endl;
+        d.SubDays(10);
+        cout << "After substracting: " << d << endl;
+    }
+    {
+        cout << "6) -----------------" << endl;
+        CDate d = CDate(2000, 1, 10);
+        cout << "Substracting 100 days from: " << d << endl;
+        d.SubDays(100);
+        cout << "After substracting: " << d << endl;
+    }
+    {
+        cout << "7) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        cout << "Substracting 1 day from: " << d << endl;
+        d.SubDays(1);
+        cout << "After substracting: " << d << endl;
+    }
+    {
+        cout << "14) ----------------" << endl;
+        CDate d = CDate(1929, 12, 11);
+        cout << "Substracting 123 days from: " << d << endl;
+        d.SubDays(123);
+        cout << "After substracting: " << d << endl;
+    }
+    {
+        cout << "15) ----------------" << endl;
+        CDate d = CDate(1929, 12, 11);
+        cout << "Substracting 0 days from: " << d << endl;
+        d.SubDays(0);
+        cout << "After substracting: " << d << endl;
+    }
+
+    {
+        cout << "4) -----------------" << endl;
+        CDate d = CDate(2000, 12, 10);
+        cout << "Substracting 60 days from: " << d << endl;
+        d.SubDays(60);
+        cout << "After substracting: " << d << endl;
+    }
+
+    {
+        cout << "4) -----------------" << endl;
+        CDate d = CDate(2000, 1, 1);
+        cout << "Substracting 1 month from: " << d << endl;
+        d.SubMonths(1);
+        cout << "After substracting: " << d << endl;
+    }
+}
+
 template <typename T_>
 static bool vectorMatch(const vector<T_> &res,
                         const vector<string> &ref) {
@@ -381,6 +636,11 @@ static bool vectorMatch(const vector<T_> &res,
     return tmp == ref;
 }
 int main(void) {
+    // CDate tests
+    // compareTest1();
+    // compareTest2();
+    // subTest();
+
     ostringstream oss;
     vector<CRegister> r;
     r.emplace_back();
